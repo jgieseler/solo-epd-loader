@@ -1,19 +1,20 @@
-# solo-loader
+***************
+solo-epd-loader
+***************
 
-Data loader for SolO/EPD EPT, HET, and STEP level 2 (l2) and low latency (ll) data provided by CDF files from <http://soar.esac.esa.int/soar>.
+Data loader for SolO/EPD EPT, HET, and STEP level 2 (l2) and low latency (ll) data provided by CDF files from `<http://soar.esac.esa.int/soar>`_.
 ----------------------------------------------------------------------------------------------------------------------------------------------
 
 
 
-## Main requirements
+Main requirements
+#################
 
 - heliopy, via [Anaconda](https://anaconda.org/conda-forge/heliopy) or [pip](https://pypi.org/project/HelioPy/)
 - cdflib, via [Anaconda](https://anaconda.org/conda-forge/cdflib) or [pip](https://pypi.org/project/cdflib/)
 
-## Installation
-
-
-
+Installation
+------------
 
 
 License
