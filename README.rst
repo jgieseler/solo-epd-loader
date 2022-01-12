@@ -4,7 +4,7 @@ SolO EPD Loader
 Python data loader for Solar Orbiter's (SolO) `Energetic Particle Detector
 (EPD) <http://espada.uah.es/epd/>`_. Provides level 2 (l2) and low latency (ll)
 data obtained through CDF files from ESA's
-`Solar Orbiter Archive <http://soar.esac.esa.int/soar>`_ for the following
+`Solar Orbiter Archive (SOAR) <http://soar.esac.esa.int/soar>`_ for the following
 sensors:
 
 - Electron Proton Telescope (EPT)
@@ -42,7 +42,7 @@ Input
 -  ``startdate``, ``enddate``: YYYYMMDD, e.g., 20210415 (integer) (if no
    ``enddate`` is provided, ``enddate = startdate`` will be used)
 -  ``path``: directory in which Solar Orbiter data is/should be
-   organized; e.g. ``/home/gieseler/uni/solo/data/`` (string)
+   organized; e.g. ``/home/userxyz/solo/data/`` (string)
 -  ``autodownload``: if ``True`` will try to download missing data files
    from SOAR (bolean)
 
@@ -79,26 +79,26 @@ directory where the corresponding cdf data files should be placed in
 subdirectories. First subfolder defines the data product ``level``
 (``l2`` or ``low_latency`` at the moment), the next one the
 ``instrument`` (so far only ``epd``), and finally the ``sensor``
-(``ept`` or ``het`` for now).
+(``ept``, ``het`` or ``step``).
 
 For example, the folder structure could look like this:
 ``/home/userxyz/solo/data/l2/epd/het``. In this case, you should call
 the loader with ``path=/home/userxyz/solo/data``; i.e., the base
 directory for the data.
 
-*Hint: You can use the (automatic) download function described in one of
-the following sections to let the subfolders be created initially
-automatically. (NB: It might be that you need to run the code with*
-``sudo`` or ``admin`` *privileges in order to be able to create new folders
-on your system.)*
+You can use the (automatic) download function described in the following
+section to let the subfolders be created initially automatically. NB: It might
+be that you need to run the code with *sudo* or *admin* privileges in order to
+be able to create new folders on your system.
 
 Data download within Python
 ---------------------------
 
 While using ``epd_load()`` to obtain the data, one can choose to automatically
-download missing data files from http://soar.esac.esa.int/soar directly from 
-within python. They are saved in the folder provided by the ``path`` argument.
-For that, just add ``autodownload=True`` to the function call:
+download missing data files from `SOAR <http://soar.esac.esa.int/soar>`_
+directly from within python. They are saved in the folder provided by the
+``path`` argument (see above). For that, just add ``autodownload=True`` to the
+function call:
 
 .. code:: python
 
