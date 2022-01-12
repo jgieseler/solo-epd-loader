@@ -14,7 +14,7 @@ sensors:
 Installation
 ------------
 
-solo_epd_loader requires python >= 3.6, and it depends on `cdflib <https://github.com/MAVENSDC/cdflib>`_ and `heliopy <https://github.com/heliopython/heliopy>`_ (which will be automatically installed). Soon it can be installed from PyPI using:
+solo_epd_loader requires python >= 3.6, and it depends on `cdflib <https://github.com/MAVENSDC/cdflib>`_ and `heliopy <https://github.com/heliopython/heliopy>`_ (which will be automatically installed). It can be installed from PyPI using:
 
 ::
 
