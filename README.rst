@@ -18,7 +18,7 @@ solo_epd_loader requires python >= 3.6, and it depends on `cdflib <https://githu
 
 ::
 
-    pip install solo_epd_loader
+    pip install solo-epd-loader
 
 Usage
 -----
