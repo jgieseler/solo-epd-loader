@@ -1,4 +1,4 @@
-solo-epd-loader
+solo_epd_loader
 ===============
 
 Data loader for SolO/EPD EPT, HET, and STEP level 2 (l2) and low latency
