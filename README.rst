@@ -225,6 +225,7 @@ Example 4 - reproducing EPT data from Fig. 2 in Wimmer-Schweingruber et al. 202
 .. code:: python
 
    from solo_epd_loader import epd_load
+   import datetime
 
    # set your local path here
    lpath = '/home/userxyz/solo/data'
