@@ -1,4 +1,4 @@
-SolO EPD Loader
+solo_epd_loader
 ===============
 
 Python data loader for Solar Orbiter's (SolO) `Energetic Particle Detector
@@ -13,6 +13,8 @@ sensors:
 
 Installation
 ------------
+
+solo_epd_loader requires python >= 3.6, and it depends on `cdflib <https://github.com/MAVENSDC/cdflib>`_ and `heliopy <https://github.com/heliopython/heliopy>`_ (which will be automatically installed). Soon it can be installed from PyPI using:
 
 ::
 
