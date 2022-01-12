@@ -17,7 +17,7 @@ Installation
 
 ::
 
-    pip install solo-epd-loader
+    pip install solo_epd_loader
 
 Usage
 -----
@@ -28,7 +28,7 @@ containing information on the energy channels.
 
 .. code:: python
 
-   from epd_loader import *
+   from solo_epd_loader import epd_load
 
    df_1, df_2, energies = \
        epd_load(sensor, viewing, level, startdate, enddate, path, autodownload)
@@ -103,7 +103,7 @@ For that, just add ``autodownload=True`` to the function call:
 
 .. code:: python
 
-   from epd_loader import *
+   from solo_epd_loader import epd_load
 
    df_protons, df_electrons, energies = \
        epd_load(sensor='het', viewing='sun', level='l2', 
@@ -133,7 +133,7 @@ viewing directions for ‘ept’ and ‘het’ telescopes of SolO/EPD.
 
 .. code:: python
 
-   from epd_loader import *
+   from solo_epd_loader import *
 
    df_protons, df_electrons, energies = \
        epd_load(sensor='ept', viewing='north', level='ll', 
@@ -158,7 +158,7 @@ electrons).
 
 .. code:: python
 
-   from epd_loader import *
+   from solo_epd_loader import epd_load
 
    df_protons, df_electrons, energies = \
        epd_load(sensor='het', viewing='sun', level='l2', 
@@ -178,7 +178,7 @@ Example 3 - reproducing EPT data from Fig. 2 in Gómez-Herrero et al. 2021\ `1 
 
 .. code:: python
 
-   from epd_loader import *
+   from solo_epd_loader import epd_load
 
    # set your local path here
    lpath = '/home/userxyz/solo/data'
@@ -223,7 +223,7 @@ Example 4 - reproducing EPT data from Fig. 2 in Wimmer-Schweingruber et al. 202
 
 .. code:: python
 
-   from epd_loader import *
+   from solo_epd_loader import epd_load
 
    # set your local path here
    lpath = '/home/userxyz/solo/data'
