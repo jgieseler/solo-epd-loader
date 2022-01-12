@@ -1,4 +1,4 @@
-solo_epd_loader
+solo-epd-loader
 ===============
 
 Python data loader for Solar Orbiter's (SolO) `Energetic Particle Detector
