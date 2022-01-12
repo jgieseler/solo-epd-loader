@@ -172,8 +172,8 @@ electrons).
    ax = df_electrons.plot(logy=True, subplots=True, figsize=(20,60))
    plt.show()
 
-Example 3 - reproducing EPT data from Fig. 2 in [Gómez-Herrero et al. 2021] 
----------------------------------------------------------------------------
+Example 3 - reproducing EPT data from Fig. 2 in Gómez-Herrero et al. 2021 [#f1]_
+------------------------------------------------------------------------------
 
 .. code:: python
 
@@ -217,8 +217,8 @@ Example 3 - reproducing EPT data from Fig. 2 in [Gómez-Herrero et al. 2021]
 channels (smaller, not combined) and different time resolution!**
 |Figure|
 
-Example 4 - reproducing EPT data from Fig. 2 in Wimmer-Schweingruber et al. 2021 [WS2021] 
------------------------------------------------------------------------------------------
+Example 4 - reproducing EPT data from Fig. 2 in Wimmer-Schweingruber et al. 2021 [#f2]_ 
+-------------------------------------------------------------------------------------
 
 .. code:: python
 
@@ -275,9 +275,9 @@ combination is a over-simplified approximation!** |image1|
 References
 ----------
 
-[Gómez-Herrero et al. 2021]_ First near-relativistic solar electron events observed by EPD onboard Solar Orbiter, Gómez-Herrero et al., A&A, 656 (2021) L3, https://doi.org/10.1051/0004-6361/202039883
+[#f1] First near-relativistic solar electron events observed by EPD onboard Solar Orbiter, Gómez-Herrero et al., A&A, 656 (2021) L3, https://doi.org/10.1051/0004-6361/202039883
 
-[WS2021]_ First year of energetic particle measurements in the inner heliosphere with Solar Orbiter’s Energetic Particle Detector, Wimmer-Schweingruber et al., A&A, 656 (2021) A22, https://doi.org/10.1051/0004-6361/202140940
+[#f2] First year of energetic particle measurements in the inner heliosphere with Solar Orbiter’s Energetic Particle Detector, Wimmer-Schweingruber et al., A&A, 656 (2021) A22, https://doi.org/10.1051/0004-6361/202140940
 
 .. |Figure| image:: ../main/examples/gh2021_fig_2.png
 .. |image1| image:: ../main/examples/ws2021_fig_2d.png
