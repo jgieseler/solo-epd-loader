@@ -1,11 +1,7 @@
 solo-epd-loader
 ===============
 
-Python data loader for Solar Orbiter's (SolO) `Energetic Particle Detector
-(EPD) <http://espada.uah.es/epd/>`_. Provides level 2 (l2) and low latency (ll)
-data obtained through CDF files from ESA's
-`Solar Orbiter Archive (SOAR) <http://soar.esac.esa.int/soar>`_ for the following
-sensors:
+Python data loader for Solar Orbiter's (SolO) `Energetic Particle Detector (EPD) <http://espada.uah.es/epd/>`_. At the moment provides level 2 (l2) and low latency (ll) data obtained through CDF files from ESA's `Solar Orbiter Archive (SOAR) <http://soar.esac.esa.int/soar>`_ for the following sensors:
 
 - Electron Proton Telescope (EPT)
 - High Energy Telescope (HET)
