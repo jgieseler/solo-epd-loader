@@ -1,7 +1,7 @@
 solo-epd-loader
 ===============
 
-Python data loader for Solar Orbiter's (SolO) `Energetic Particle Detector (EPD) <http://espada.uah.es/epd/>`_. At the moment provides level 2 (l2) and low latency (ll) data obtained through CDF files from ESA's `Solar Orbiter Archive (SOAR) <http://soar.esac.esa.int/soar>`_ for the following sensors:
+Python data loader for Solar Orbiter's (SolO) `Energetic Particle Detector (EPD) <http://espada.uah.es/epd/>`_. At the moment provides level 2 (l2) and low latency (ll) data (`more details on data levels here <http://espada.uah.es/epd/EPD_data_overview.php>`_) obtained through CDF files from ESA's `Solar Orbiter Archive (SOAR) <http://soar.esac.esa.int/soar>`_ for the following sensors:
 
 - Electron Proton Telescope (EPT)
 - High Energy Telescope (HET)
@@ -180,39 +180,53 @@ Example 3 - reproducing EPT data from Fig. 2 in Gómez-Herrero et al. 2021 [#]_
    # set your local path here
    lpath = '/home/userxyz/solo/data'
 
-   # load data
-   df_protons, df_electrons, energies = \
-       epd_load(sensor='ept', viewing='sun', level='l2', startdate=20200708, 
-                enddate=20200724, path=lpath, autodownload=True)
+   # load ept sun viewing data
+   df_protons_ept, df_electrons_ept, energies_ept = \
+      epd_load(sensor='ept', viewing='sun', level='l2', startdate=20200708,
+               enddate=20200724, path=lpath, autodownload=True)
+
+   # load step data             
+   df_step, energies_step = \
+      epd_load(sensor='step', level='l2', startdate=20200708,
+               enddate=20200724, path=lpath, autodownload=True)
 
    # change time resolution to get smoother curve (resample with mean)
    resample = '60min'
 
-   fig, axs = plt.subplots(2, sharex=True)
-   fig.suptitle('EPT Sun')
+   fig, axs = plt.subplots(2, sharex=True, figsize=(8, 10), dpi=200)
+   axs[0].set_prop_cycle('color', plt.cm.Oranges_r(np.linspace(0,1,7)))
+   axs[1].set_prop_cycle('color', plt.cm.winter(np.linspace(0,1,7)))
 
-   # plot selection of channels
+   # plot selection of electron channels
    for channel in [0, 8, 16, 26]:
-       df_electrons['Electron_Flux'][f'Electron_Flux_{channel}']\
-           .resample(resample).mean().plot(ax = axs[0], logy=True,
-           label=energies["Electron_Bins_Text"][channel][0])
+      df_electrons_ept['Electron_Flux'][f'Electron_Flux_{channel}']\
+         .resample(resample).mean().plot(ax = axs[0], logy=True,
+         label='EPT '+energies_ept["Electron_Bins_Text"][channel][0])
+
+   # plot selection of ion channels
+   for channel in [8, 17, 33]:
+      df_step['Magnet_Flux'][channel]\
+         .resample(resample).mean().plot(ax = axs[1], logy=True,
+         label='STEP '+energies_step["Bins_Text"][channel][0])
    for channel in [6, 22, 32, 48]:
-       df_protons['Ion_Flux'][f'Ion_Flux_{channel}']\
-           .resample(resample).mean().plot(ax = axs[1], logy=True,
-           label=energies["Ion_Bins_Text"][channel][0])
+      df_protons_ept['Ion_Flux'][f'Ion_Flux_{channel}']\
+         .resample(resample).mean().plot(ax = axs[1], logy=True,
+         label='EPT '+energies_ept["Ion_Bins_Text"][channel][0])
 
    axs[0].set_ylim([0.3, 4e6])
    axs[1].set_ylim([0.01, 5e8])
 
    axs[0].set_ylabel("Electron flux\n"+r"(cm$^2$ sr s MeV)$^{-1}$")
    axs[1].set_ylabel("Ion flux\n"+r"(cm$^2$ sr s MeV)$^{-1}$")
-   axs[0].legend()
-   axs[1].legend()
+   axs[0].legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+   axs[1].legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
    plt.subplots_adjust(hspace=0)
-   plt.show()
+   fig.savefig("gh2021_fig_2.png", bbox_inches = "tight")
+   plt.close('all')
 
 **NB: This is just an approximate reproduction with different energy
-channels (smaller, not combined) and different time resolution!**
+channels, different time resolution, and different viewing direction!
+Note also that the STEP data can not be used straightforwardly.**
 |Figure|
 
 Example 4 - reproducing EPT data from Fig. 2 in Wimmer-Schweingruber et al. 2021 [#]_ 
