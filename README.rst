@@ -40,7 +40,7 @@ Input
 -  ``startdate``, ``enddate``: YYYYMMDD, e.g., 20210415 (integer) (if no
    ``enddate`` is provided, ``enddate = startdate`` will be used)
 -  ``path``: directory in which Solar Orbiter data is/should be
-   organized; e.g. ``'/home/userxyz/solo/data/''`` (string)
+   organized; e.g. ``'/home/userxyz/solo/data/'`` (string)
 -  ``autodownload``: if ``True`` will try to download missing data files
    from SOAR (bolean)
 
