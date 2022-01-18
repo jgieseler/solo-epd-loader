@@ -170,7 +170,7 @@ electrons).
    ax = df_electrons.plot(logy=True, subplots=True, figsize=(20,60))
    plt.show()
 
-Example 3 - reproducing EPT data from Fig. 2 in Gómez-Herrero et al. 2021 [#]_
+Example 3 - (partly) reproducing Fig. 2 from Gómez-Herrero et al. 2021 [#]_
 ------------------------------------------------------------------------------
 
 .. code:: python
@@ -229,7 +229,7 @@ channels, different time resolution, and different viewing direction!
 Note also that the STEP data can not be used straightforwardly.**
 |Figure|
 
-Example 4 - reproducing EPT data from Fig. 2 in Wimmer-Schweingruber et al. 2021 [#]_ 
+Example 4 - partly reproducing Fig. 2 from Wimmer-Schweingruber et al. 2021 [#]_ 
 -------------------------------------------------------------------------------------
 
 .. code:: python
