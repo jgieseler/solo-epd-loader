@@ -33,21 +33,21 @@ containing information on the energy channels.
 Input
 ~~~~~
 
--  ``sensor``: ``ept``, ``het``, or ``step`` (string)
--  ``viewing``: ``sun``, ``asun``, ``north``, or ``south`` (string); not
-   needed for ``sensor = step``
--  ``level``: ``ll`` or ``l2`` (string)
+-  ``sensor``: ``'ept'``, ``'het'``, or ``'step'`` (string)
+-  ``viewing``: ``'sun'``, ``'asun'``, ``''north'``, or ``'south'`` (string); not
+   needed for ``sensor = 'step'``
+-  ``level``: ``'ll'`` or ``'l2'`` (string)
 -  ``startdate``, ``enddate``: YYYYMMDD, e.g., 20210415 (integer) (if no
    ``enddate`` is provided, ``enddate = startdate`` will be used)
 -  ``path``: directory in which Solar Orbiter data is/should be
-   organized; e.g. ``/home/userxyz/solo/data/`` (string)
+   organized; e.g. ``'/home/userxyz/solo/data/''`` (string)
 -  ``autodownload``: if ``True`` will try to download missing data files
    from SOAR (bolean)
 
 Return
 ~~~~~~
 
--  For ``sensor`` = ``ept`` or ``het``:
+-  For ``sensor`` = ``'ept'`` or ``'het'``:
 
    1. Pandas dataframe with proton fluxes and errors (for EPT also alpha
       particles) in ‘particles / (s cm^2 sr MeV)’
@@ -59,7 +59,7 @@ Return
       -  Value of lower energy bin edge in MeV
       -  Value of energy bin width in MeV
 
--  For ``sensor`` = ``step``:
+-  For ``sensor`` = ``'step'``:
 
    1. Pandas dataframe with fluxes and errors in ‘particles / (s cm^2 sr
       MeV)’
@@ -81,7 +81,7 @@ subdirectories. First subfolder defines the data product ``level``
 
 For example, the folder structure could look like this:
 ``/home/userxyz/solo/data/l2/epd/het``. In this case, you should call
-the loader with ``path=/home/userxyz/solo/data``; i.e., the base
+the loader with ``path='/home/userxyz/solo/data'``; i.e., the base
 directory for the data.
 
 You can use the (automatic) download function described in the following
