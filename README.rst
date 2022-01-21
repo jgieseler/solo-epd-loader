@@ -19,7 +19,9 @@ Python data loader for Solar Orbiter's (SolO) `Energetic Particle Detector (EPD)
 Installation
 ------------
 
-solo_epd_loader requires python >= 3.6, and it depends on `cdflib <https://github.com/MAVENSDC/cdflib>`_ and `heliopy <https://github.com/heliopython/heliopy>`_ (which will be automatically installed). It can be installed either from `PyPI <https://pypi.org/project/solo-epd-loader/>`_ using:
+solo_epd_loader requires python >= 3.6, and it depends on `cdflib <https://github.com/MAVENSDC/cdflib>`_ and `heliopy <https://github.com/heliopython/heliopy>`_ (which will be automatically installed). 
+
+It can be installed either from `PyPI <https://pypi.org/project/solo-epd-loader/>`_ using:
 
 .. code:: bash
 
@@ -55,7 +57,7 @@ Input
 -  ``startdate``, ``enddate``: YYYYMMDD, e.g., 20210415 (integer) (if no
    ``enddate`` is provided, ``enddate = startdate`` will be used)
 -  ``path``: directory in which Solar Orbiter data is/should be
-   organized; e.g. ``'/home/userxyz/solo/data/'`` (string)
+   organized; e.g. ``'/home/userxyz/solo/data/'`` (string). See :ref:`Data folder structure` for more details.
 -  ``autodownload``: if ``True`` will try to download missing data files
    from SOAR (bolean)
 
