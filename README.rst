@@ -306,6 +306,7 @@ References
 ----------
 
 .. [#] First near-relativistic solar electron events observed by EPD onboard Solar Orbiter, Gómez-Herrero et al., A&A, 656 (2021) L3, https://doi.org/10.1051/0004-6361/202039883
+
 .. [#] First year of energetic particle measurements in the inner heliosphere with Solar Orbiter’s Energetic Particle Detector, Wimmer-Schweingruber et al., A&A, 656 (2021) A22, https://doi.org/10.1051/0004-6361/202140940
 
 .. |Figure| image:: https://github.com/jgieseler/solo-epd-loader/raw/main/examples/gh2021_fig_2.png
