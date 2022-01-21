@@ -320,3 +320,8 @@ the terms of the BSD 3-clause license. This package is based upon
 the `Openastronomy packaging guide <https://github.com/OpenAstronomy/packaging-guide>`_
 which is licensed under the BSD 3-clause licence. See the licenses folder for
 more information.
+
+Acknowledgements
+----------------
+
+The development of this software has received funding from the European Union's Horizon 2020 research and innovation programme under grant agreement No 101004159 (SERPENTINE).
