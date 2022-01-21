@@ -1,6 +1,15 @@
 solo-epd-loader
 ===============
 
+|pypi Version| |conda version| |license| 
+
+.. |pypi Version| image:: https://img.shields.io/pypi/v/solo-epd-loader
+   :target: https://pypi.org/project/solo-epd-loader/
+.. |conda version| image:: https://img.shields.io/conda/vn/conda-forge/solo-epd-loader
+   :target: https://anaconda.org/conda-forge/solo-epd-loader/
+.. |license| image:: https://img.shields.io/pypi/l/solo-epd-loader
+   :target: https://github.com/jgieseler/solo-epd-loader/blob/main/LICENSE.rst
+
 Python data loader for Solar Orbiter's (SolO) `Energetic Particle Detector (EPD) <http://espada.uah.es/epd/>`_. At the moment provides level 2 (l2) and low latency (ll) data (`more details on data levels here <http://espada.uah.es/epd/EPD_data_overview.php>`_) obtained through CDF files from ESA's `Solar Orbiter Archive (SOAR) <http://soar.esac.esa.int/soar>`_ for the following sensors:
 
 - Electron Proton Telescope (EPT)
@@ -10,11 +19,17 @@ Python data loader for Solar Orbiter's (SolO) `Energetic Particle Detector (EPD)
 Installation
 ------------
 
-solo_epd_loader requires python >= 3.6, and it depends on `cdflib <https://github.com/MAVENSDC/cdflib>`_ and `heliopy <https://github.com/heliopython/heliopy>`_ (which will be automatically installed). It can be installed from PyPI using:
+solo_epd_loader requires python >= 3.6, and it depends on `cdflib <https://github.com/MAVENSDC/cdflib>`_ and `heliopy <https://github.com/heliopython/heliopy>`_ (which will be automatically installed). It can be installed either from `PyPI <https://pypi.org/project/solo-epd-loader/>`_ using:
 
-::
+.. code:: bash
 
     pip install solo-epd-loader
+
+or from `Anaconda <https://anaconda.org/conda-forge/solo-epd-loader/>`_ using:
+
+.. code:: bash
+
+    conda install -c conda-forge solo-epd-loader
 
 Usage
 -----
