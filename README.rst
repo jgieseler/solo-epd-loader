@@ -19,7 +19,7 @@ Python data loader for Solar Orbiter's (SolO) `Energetic Particle Detector (EPD)
 Installation
 ------------
 
-solo_epd_loader requires python >= 3.6, and it depends on `cdflib <https://github.com/MAVENSDC/cdflib>`_ and `heliopy <https://github.com/heliopython/heliopy>`_ (which will be automatically installed). 
+solo_epd_loader requires python >= 3.6.
 
 It can be installed either from `PyPI <https://pypi.org/project/solo-epd-loader/>`_ using:
 
@@ -188,7 +188,7 @@ electrons).
    plt.show()
 
 Example 3 - partly reproducing `Fig. 2 <https://www.aanda.org/articles/aa/full_html/2021/12/aa39883-20/F2.html>`_ from Gómez-Herrero et al. 2021 [#]_
-------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------
 
 .. code:: python
 
@@ -247,7 +247,7 @@ Note also that the STEP data can not be used straightforwardly.**
 |Figure|
 
 Example 4 - partly reproducing `Fig. 2e <https://www.aanda.org/articles/aa/full_html/2021/12/aa40940-21/F2.html>`_ from Wimmer-Schweingruber et al. 2021 [#]_ 
--------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 .. code:: python
 
