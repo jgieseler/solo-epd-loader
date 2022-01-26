@@ -1,7 +1,7 @@
 solo-epd-loader
 ===============
 
-|pypi Version| |conda version| |license| 
+|pypi Version| |conda version| |license| |python version|
 
 .. |pypi Version| image:: https://img.shields.io/pypi/v/solo-epd-loader?style=flat&logo=pypi
    :target: https://pypi.org/project/solo-epd-loader/
