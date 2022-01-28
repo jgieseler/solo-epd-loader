@@ -17,9 +17,9 @@ Python data loader for Solar Orbiter's (SolO) `Energetic Particle Detector (EPD)
 - High Energy Telescope (HET)
 - SupraThermal Electrons and Protons (STEP)
 
-As of now, only the standard `rates` data products are supported (i.e., no `burst` or `high cadence` data). Also the Suprathermal Ion Spectrograph (SIS) is not yet included.
+As of now, only the standard ``rates`` data products are supported (i.e., no ``burst`` or ``high cadence`` data). Also the Suprathermal Ion Spectrograph (SIS) is not yet included.
 
-**Please always refer to the [official EPD data description](http://espada.uah.es/epd/EPD_data.php) before using the data!**
+**Please always refer to the `official EPD data description` <http://espada.uah.es/epd/EPD_data.php>_ before using the data!**
 
 Installation
 ------------
