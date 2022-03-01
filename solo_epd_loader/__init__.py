@@ -407,7 +407,6 @@ def _autodownload_cdf(startdate, enddate, sensor, level, path):
             if os.path.exists(path) is False:
                 print(f'Creating dir {path}')
                 os.makedirs(path)
-            # print(i+' MISSING => DOWNLOADING...')
             tdate = int(i.split('_')[3].split('T')[0])
             tview = i.split('-')[2]
             if level.lower() == 'll':
