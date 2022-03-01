@@ -16,5 +16,3 @@ exclude .editorconfig
 exclude .zenodo.json
 exclude *.yml
 exclude *.yaml
-include versioneer.py
-include solo_epd_loader/version.py

@@ -1,3 +1,11 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+
+from pkg_resources import get_distribution, DistributionNotFound
+try:
+    __version__ = get_distribution(__name__).version
+except DistributionNotFound:
+    pass  # package is not installed
+
 import datetime as dt
 import glob
 import itertools
@@ -10,10 +18,6 @@ import urllib.request
 from pathlib import Path
 from astropy.io.votable import parse_single_table
 import cdflib
-
-
-from . import version
-__version__ = version.get_versions()['version']
 
 
 """
