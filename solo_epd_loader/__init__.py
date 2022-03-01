@@ -6,6 +6,7 @@ try:
 except DistributionNotFound:
     pass  # package is not installed
 
+import datetime as dt
 import glob
 import itertools
 import numpy as np
@@ -403,7 +404,10 @@ def _autodownload_cdf(startdate, enddate, sensor, level, path):
     for i in fls:
         my_file = Path(path)/i
         if not my_file.is_file():
-            print(i+' MISSING => DOWNLOADING...')
+            if os.path.exists(path) is False:
+                print(f'Creating dir {path}')
+                os.makedirs(path)
+            # print(i+' MISSING => DOWNLOADING...')
             tdate = int(i.split('_')[3].split('T')[0])
             tview = i.split('-')[2]
             if level.lower() == 'll':
@@ -431,12 +435,16 @@ def epd_load(sensor, level, startdate, enddate=None, viewing=None, path=None,
         Defines EPD sensor
     level : {'l2', 'll'}
         Defines level of data product: level 2 ('l2') or low-latency ('ll')
-    startdate : yyyymmdd (int)
-        Provides year (yyyy), month (mm) and day (dd) of the start date as one
-        combined integer; fill empty positions with zeros, e.g. '20210415'
-    enddate : yyyymmdd (int), optional
-        Provides year (yyyy), month (mm) and day (dd) of the end date as one
-        combined integer; fill empty positions with zeros, e.g. '20210415'.
+    startdate : (datetime or int)
+        Provides start date. Either a datetime object (e.g., dt.date(2021,12,31)
+        or dt.datetime(2021,4,15)). Or a combined integer yyyymmdd with year
+        (yyyy), month (mm) and day (dd) with empty positions filled with zeros,
+        e.g. 20210415
+    enddate : (datetime or int), optional
+        Provides end date. Either a datetime object (e.g., dt.date(2021,12,31)
+        or dt.datetime(2021,4,15)). Or a combined integer yyyymmdd with year
+        (yyyy), month (mm) and day (dd) with empty positions filled with zeros,
+        e.g. 20210415
         (if no enddate is given, 'enddate = startdate' will be set)
     viewing : {'sun', 'asun', 'north', 'south' or None}, optional
         Viewing direction of sensor. Needed for 'ept' or 'het'; for 'step'
@@ -485,6 +493,23 @@ def epd_load(sensor, level, startdate, enddate=None, viewing=None, path=None,
     >>> df, energies = epd_load(sensor='step', level='l2', startdate=20200820,
     ... enddate=20200822, autodownload=True)
     """
+
+    # refuse string as date input:
+    for d in [startdate, enddate]:
+        if isinstance(d, str):
+            raise SystemExit("startdate & enddate must be datetime objects or YYYYMMDD integer!")
+
+    # accept datetime object as date input by converting it to internal integer:
+    if isinstance(startdate, dt.datetime) or isinstance(startdate, dt.date):
+        startdate = int(startdate.strftime("%Y%m%d"))
+    if isinstance(enddate, dt.datetime) or isinstance(enddate, dt.date):
+        enddate = int(enddate.strftime("%Y%m%d"))
+
+    # check integer date input for length:
+    for d in [startdate, enddate]:
+        if isinstance(d, int):
+            if len(str(d)) != 8:
+                raise SystemExit(f"startdate & enddate must be (datetime objects or) integers of the form YYYYMMDD, not {d}!")
 
     if sensor.lower() == 'step':
         datadf, energies_dict = \

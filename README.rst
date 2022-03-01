@@ -59,8 +59,7 @@ Input
 -  ``viewing``: ``'sun'``, ``'asun'``, ``''north'``, or ``'south'`` (string); not
    needed for ``sensor = 'step'``
 -  ``level``: ``'ll'`` or ``'l2'`` (string)
--  ``startdate``, ``enddate``: YYYYMMDD, e.g., 20210415 (integer) (if no
-   ``enddate`` is provided, ``enddate = startdate`` will be used)
+-  ``startdate``, ``enddate``: Datetime object (e.g., ``dt.date(2021,12,31)`` or ``dt.datetime(2021,4,15)``) or integer of the form yyyymmdd with empty positions filled with zeros, e.g. ``20210415`` (if no ``enddate`` is provided, ``enddate = startdate`` will be used)
 -  ``path``: directory in which Solar Orbiter data is/should be
    organized; e.g. ``'/home/userxyz/solo/data/'`` (string). See `Data folder structure`_ for more details.
 -  ``autodownload``: if ``True`` will try to download missing data files
