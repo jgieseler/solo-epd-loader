@@ -126,7 +126,7 @@ def _load_tqdm(verbose=True):
         tqdm_available = True
     except ModuleNotFoundError:
         if verbose:
-            print("Module tqdm not installed, won't show progress bar.")
+            print("Module tqdm not installed, won't show progress bar. To get rid of this: pip install tqdm")
         tqdm_available = False
         download_url = None
     return tqdm_available, download_url
