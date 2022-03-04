@@ -50,16 +50,16 @@ containing information on the energy channels.
    from solo_epd_loader import epd_load
 
    df_1, df_2, energies = \
-       epd_load(sensor, viewing, level, startdate, enddate, path, autodownload)
+       epd_load(sensor, level, startdate, enddate=None, viewing=None, path=None, autodownload=False)
 
 Input
 ~~~~~
 
 -  ``sensor``: ``'ept'``, ``'het'``, or ``'step'`` (string)
--  ``viewing``: ``'sun'``, ``'asun'``, ``''north'``, or ``'south'`` (string); not
-   needed for ``sensor = 'step'``
 -  ``level``: ``'ll'`` or ``'l2'`` (string)
 -  ``startdate``, ``enddate``: Datetime object (e.g., ``dt.date(2021,12,31)`` or ``dt.datetime(2021,4,15)``) or integer of the form yyyymmdd with empty positions filled with zeros, e.g. ``20210415`` (if no ``enddate`` is provided, ``enddate = startdate`` will be used)
+-  ``viewing``: ``'sun'``, ``'asun'``, ``'north'``, ``'south'`` (string) or ``None``; not
+   needed for ``sensor = 'step'``
 -  ``path``: directory in which Solar Orbiter data is/should be
    organized; e.g. ``'/home/userxyz/solo/data/'`` (string). See `Data folder structure`_ for more details.
 -  ``autodownload``: if ``True`` will try to download missing data files
@@ -124,8 +124,8 @@ function call:
    from solo_epd_loader import epd_load
 
    df_protons, df_electrons, energies = \
-       epd_load(sensor='het', viewing='sun', level='l2', 
-                startdate=20200820, enddate=20200821, \
+       epd_load(sensor='het', level='l2', startdate=20200820,
+                enddate=20200821, viewing='sun',
                 path='/home/userxyz/solo/data/', autodownload=True)
 
    # plot protons and alphas
@@ -154,8 +154,8 @@ viewing directions for ‘ept’ and ‘het’ telescopes of SolO/EPD.
    from solo_epd_loader import *
 
    df_protons, df_electrons, energies = \
-       epd_load(sensor='ept', viewing='north', level='ll', 
-                startdate=20210415, enddate=20210416, \
+       epd_load(sensor='ept', level='ll', startdate=20210415,
+                enddate=20210416, viewing='north',
                 path='/home/userxyz/solo/data/')
 
    # plot protons and alphas
@@ -179,8 +179,8 @@ electrons).
    from solo_epd_loader import epd_load
 
    df_protons, df_electrons, energies = \
-       epd_load(sensor='het', viewing='sun', level='l2', 
-                startdate=20200820, enddate=20200821, \
+       epd_load(sensor='het', level='l2', startdate=20200820,
+                enddate=20200821, viewing='sun',
                 path='/home/userxyz/solo/data/')
 
    # plot protons and alphas
@@ -203,8 +203,8 @@ Example 3 - partly reproducing `Fig. 2 <https://www.aanda.org/articles/aa/full_h
 
    # load ept sun viewing data
    df_protons_ept, df_electrons_ept, energies_ept = \
-      epd_load(sensor='ept', viewing='sun', level='l2', startdate=20200708,
-               enddate=20200724, path=lpath, autodownload=True)
+      epd_load(sensor='ept', level='l2', startdate=20200708, 
+               enddate=20200724, viewing='sun', path=lpath, autodownload=True)
 
    # load step data             
    df_step, energies_step = \
@@ -263,20 +263,20 @@ Example 4 - partly reproducing `Fig. 2e <https://www.aanda.org/articles/aa/full_
 
    # load data
    df_protons_sun, df_electrons_sun, energies = \
-       epd_load(sensor='ept', viewing='sun', level='l2', 
-                startdate=20201210, enddate=20201211,
+       epd_load(sensor='ept', level='l2', startdate=20201210,
+                enddate=20201211, viewing='sun',
                 path=lpath, autodownload=True)
    df_protons_asun, df_electrons_asun, energies = \
-       epd_load(sensor='ept', viewing='asun', level='l2', 
-                startdate=20201210, enddate=20201211,
+       epd_load(sensor='ept', level='l2', startdate=20201210,
+                enddate=20201211, viewing='asun',
                 path=lpath, autodownload=True)
    df_protons_south, df_electrons_south, energies = \
-       epd_load(sensor='ept', viewing='south', level='l2', 
-                startdate=20201210, enddate=20201211,
+       epd_load(sensor='ept', level='l2', startdate=20201210,
+                enddate=20201211, viewing='south',
                 path=lpath, autodownload=True)
    df_protons_north, df_electrons_north, energies = \
-       epd_load(sensor='ept', viewing='north', level='l2', 
-                startdate=20201210, enddate=20201211,
+       epd_load(sensor='ept', level='l2', startdate=20201210,
+                enddate=20201211, viewing='north',
                 path=lpath, autodownload=True)
 
    # plot mean intensities of two energy channels; 'channel' defines the lower one
