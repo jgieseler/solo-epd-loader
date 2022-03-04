@@ -483,7 +483,7 @@ def epd_load(sensor, level, startdate, enddate=None, viewing=None, path=None,
     2020 from user-defined directory, downloading missing files from SOAR:
 
     >>> df_protons, df_electrons, energies = epd_load(sensor='het',
-    ...     viewing='sun', level='ll', startdate=20200820, enddate=20200822,
+    ...     level='ll', startdate=20200820, enddate=20200822, viewing='sun',
     ...     autodownload=True)
 
     Load EPD/STEP level 2 data for Aug 20 to Aug 22, 2020 from user-defined
