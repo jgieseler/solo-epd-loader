@@ -1,7 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
-from pkg_resources import DistributionNotFound, get_distribution
-
+from pkg_resources import get_distribution, DistributionNotFound
 try:
     __version__ = get_distribution(__name__).version
 except DistributionNotFound:
@@ -10,16 +9,16 @@ except DistributionNotFound:
 import datetime as dt
 import glob
 import itertools
+import numpy as np
 import os
+import pandas as pd
 import re
 import urllib.request
-from pathlib import Path
 
-import cdflib
-import numpy as np
-import pandas as pd
+from pathlib import Path
 from astropy.io.votable import parse_single_table
-from heliopy.data.util import cdf2df
+import cdflib
+
 
 """
 Example code that loads low latency (ll) electron and proton (+alphas) fluxes
@@ -611,14 +610,14 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None,
 
         # load cdf files
         t_cdf_file = cdflib.CDF(filelist[0])
-        df_p = cdf2df(t_cdf_file, "EPOCH")
-        df_e = cdf2df(t_cdf_file, e_epoch)
+        df_p = _cdf2df(t_cdf_file, "EPOCH")
+        df_e = _cdf2df(t_cdf_file, e_epoch)
 
         if len(filelist) > 1:
             for f in filelist[1:]:
                 t_cdf_file = cdflib.CDF(f)
-                t_df_p = cdf2df(t_cdf_file, "EPOCH")
-                t_df_e = cdf2df(t_cdf_file, e_epoch)
+                t_df_p = _cdf2df(t_cdf_file, "EPOCH")
+                t_df_e = _cdf2df(t_cdf_file, e_epoch)
                 df_p = pd.concat([df_p, t_df_p])
                 df_e = pd.concat([df_e, t_df_e])
 
@@ -902,3 +901,159 @@ def _read_step_cdf(level, startdate, enddate=None, path=None,
     '''
 
     return datadf, energies_dict
+
+
+def _cdf2df(cdf, index_key, dtimeindex=True, badvalues=None,
+            ignore=None, include=None):
+    """
+    Converts a cdf file to a pandas dataframe.
+    Note that this only works for 1 dimensional data, other data such as
+    distribution functions or pitch angles will not work properly.
+    Parameters
+    ----------
+    cdf : cdf
+        Opened CDF file.
+    index_key : str
+        The CDF key to use as the index in the output DataFrame.
+    dtimeindex : bool
+        If ``True``, the DataFrame index is parsed as a datetime.
+        Default is ``True``.
+    badvalues : dict, list
+        Deprecated.
+    ignore : list
+        In case a CDF file has columns that are unused / not required, then
+        the column names can be passed as a list into the function.
+    include : str, list
+        If only specific columns of a CDF file are desired, then the column
+        names can be passed as a list into the function. Should not be used
+        with ``ignore``.
+    Returns
+    -------
+    df : :class:`pandas.DataFrame`
+        Data frame with read in data.
+    """
+    if badvalues is not None:
+        warnings.warn('The badvalues argument is decprecated, as bad values '
+                      'are now automatically recognised using the FILLVAL CDF '
+                      'attribute.', DeprecationWarning)
+    if include is not None:
+        if ignore is not None:
+            raise ValueError('ignore and include are incompatible keywords')
+        if isinstance(include, str):
+            include = [include]
+        if index_key not in include:
+            include.append(index_key)
+
+    # Extract index values
+    index_info = cdf.varinq(index_key)
+    if index_info['Last_Rec'] == -1:
+        raise CDFEmptyError('No records present in CDF file')
+
+    index = cdf.varget(index_key)
+    try:
+        # If there are multiple indexes, take the first one
+        # TODO: this is just plain wrong, there should be a way to get all
+        # the indexes out
+        index = index[...][:, 0]
+    except IndexError:
+        pass
+
+    if dtimeindex:
+        index = cdflib.epochs.CDFepoch.breakdown(index, to_np=True)
+        index_df = pd.DataFrame({'year': index[:, 0],
+                                 'month': index[:, 1],
+                                 'day': index[:, 2],
+                                 'hour': index[:, 3],
+                                 'minute': index[:, 4],
+                                 'second': index[:, 5],
+                                 'ms': index[:, 6],
+                                 })
+        # Not all CDFs store pass milliseconds
+        try:
+            index_df['us'] = index[:, 7]
+            index_df['ns'] = index[:, 8]
+        except IndexError:
+            pass
+        index = pd.DatetimeIndex(pd.to_datetime(index_df), name='Time')
+    data_dict = {}
+    npoints = len(index)
+
+    var_list = _get_cdf_vars(cdf)
+    keys = {}
+    # Get mapping from each attr to sub-variables
+    for cdf_key in var_list:
+        if ignore:
+            if cdf_key in ignore:
+                continue
+        elif include:
+            if cdf_key not in include:
+                continue
+        if cdf_key == 'Epoch':
+            keys[cdf_key] = 'Time'
+        else:
+            keys[cdf_key] = cdf_key
+    # Remove index key, as we have already used it to create the index
+    keys.pop(index_key)
+    # Remove keys for data that doesn't have the right shape to load in CDF
+    # Mapping of keys to variable data
+    vars = {cdf_key: cdf.varget(cdf_key) for cdf_key in keys.copy()}
+    for cdf_key in keys:
+        var = vars[cdf_key]
+        if type(var) is np.ndarray:
+            key_shape = var.shape
+            if len(key_shape) == 0 or key_shape[0] != npoints:
+                vars.pop(cdf_key)
+        else:
+            vars.pop(cdf_key)
+
+    # Loop through each key and put data into the dataframe
+    for cdf_key in vars:
+        df_key = keys[cdf_key]
+        # Get fill value for this key
+        try:
+            fillval = float(cdf.varattsget(cdf_key)['FILLVAL'])
+        except KeyError:
+            fillval = np.nan
+
+        if isinstance(df_key, list):
+            for i, subkey in enumerate(df_key):
+                data = vars[cdf_key][...][:, i]
+                data = _fillval_nan(data, fillval)
+                data_dict[subkey] = data
+        else:
+            # If ndims is 1, we just have a single column of data
+            # If ndims is 2, have multiple columns of data under same key
+            key_shape = vars[cdf_key].shape
+            ndims = len(key_shape)
+            if ndims == 1:
+                data = vars[cdf_key][...]
+                data = _fillval_nan(data, fillval)
+                data_dict[df_key] = data
+            elif ndims == 2:
+                for i in range(key_shape[1]):
+                    data = vars[cdf_key][...][:, i]
+                    data = _fillval_nan(data, fillval)
+                    data_dict[f'{df_key}_{i}'] = data
+
+    return pd.DataFrame(index=index, data=data_dict)
+
+
+def _get_cdf_vars(cdf):
+    # Get list of all the variables in an open CDF file
+    var_list = []
+    cdf_info = cdf.cdf_info()
+    for attr in list(cdf_info.keys()):
+        if 'variable' in attr.lower() and len(cdf_info[attr]) > 0:
+            for var in cdf_info[attr]:
+                var_list += [var]
+
+    return var_list
+
+
+def _fillval_nan(data, fillval):
+    try:
+        data[data == fillval] = np.nan
+    except ValueError:
+        # This happens if we try and assign a NaN to an int type
+        pass
+    return data
