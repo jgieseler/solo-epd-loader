@@ -620,7 +620,6 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None,
 
         if len(filelist) > 1:
             for f in filelist[1:]:
-                # t_cdf_file = cdflib.CDF(f)
                 data = read_cdf(f)
                 t_df_p = data[0].to_dataframe()
                 t_df_e = data[e_epoch].to_dataframe()
@@ -755,12 +754,13 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None,
                                        'Electron_Uncertainty',
                                        'QUALITY_FLAG'])
 
-        # replace FILLVALUES in dataframes with np.nan
+        # manual replace FILLVALUES in dataframes with np.nan
         # t_cdf_file.varattsget("Ion_Flux")["FILLVAL"][0] = -1e+31
         # same for l2 & ll and het & ept and e, p/ion, alpha
+        # remove this (i.e. following to lines) when sunpy's read_cdf is updated and replaces FILLVAL directly, see
+        # https://github.com/sunpy/sunpy/issues/5908
         df_epd_p = df_epd_p.replace(-1e+31, np.nan)
         df_epd_e = df_epd_e.replace(-1e+31, np.nan)
-        # NB: t_cdf_file.varinq('Ion_Flux')['Pad'][0] = -1e+30
 
         energies_dict = {protons+"_Bins_Text":
                          t_cdf_file.varget(protons+'_Bins_Text'),
