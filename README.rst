@@ -222,15 +222,17 @@ Example 3 - partly reproducing `Fig. 2 <https://www.aanda.org/articles/aa/full_h
    axs[0].set_prop_cycle('color', plt.cm.Oranges_r(np.linspace(0,1,7)))
    axs[1].set_prop_cycle('color', plt.cm.winter(np.linspace(0,1,7)))
 
-   # plot selection of electron channels
+   # plot selection of ept electron channels
    for channel in [0, 8, 16, 26]:
       df_electrons_ept['Electron_Flux'][f'Electron_Flux_{channel}'].resample(resample).mean().plot(
          ax = axs[0], logy=True, label='EPT '+energies_ept["Electron_Bins_Text"][channel][0])
 
-   # plot selection of ion channels
+   # plot selection of step ion channels
    for channel in [8, 17, 33]:
       df_step['Magnet_Flux'][channel].resample(resample).mean().plot(
          ax = axs[1], logy=True, label='STEP '+energies_step["Bins_Text"][channel][0])
+
+   # plot selection of ept ion channels
    for channel in [6, 22, 32, 48]:
       df_protons_ept['Ion_Flux'][f'Ion_Flux_{channel}'].resample(resample).mean().plot(
          ax = axs[1], logy=True, label='EPT '+energies_ept["Ion_Bins_Text"][channel][0])
