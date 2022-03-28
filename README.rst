@@ -196,7 +196,9 @@ Example 3 - partly reproducing `Fig. 2 <https://www.aanda.org/articles/aa/full_h
 
 .. code:: python
 
+   from matplotlib import pyplot as plt
    from solo_epd_loader import epd_load
+   import numpy as np
 
    # set your local path here
    lpath = '/home/userxyz/solo/data'
@@ -255,8 +257,10 @@ Example 4 - partly reproducing `Fig. 2e <https://www.aanda.org/articles/aa/full_
 
 .. code:: python
 
+   from matplotlib import pyplot as plt
    from solo_epd_loader import epd_load
    import datetime
+   import pandas as pd
 
    # set your local path here
    lpath = '/home/userxyz/solo/data'
