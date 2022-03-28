@@ -151,7 +151,8 @@ viewing directions for ‘ept’ and ‘het’ telescopes of SolO/EPD.
 
 .. code:: python
 
-   from solo_epd_loader import *
+   from matplotlib import pyplot as plt
+   from solo_epd_loader import epd_load
 
    df_protons, df_electrons, energies = \
        epd_load(sensor='ept', level='ll', startdate=20210415,
@@ -176,6 +177,7 @@ electrons).
 
 .. code:: python
 
+   from matplotlib import pyplot as plt
    from solo_epd_loader import epd_load
 
    df_protons, df_electrons, energies = \
