@@ -23,8 +23,6 @@ from astropy.io.votable import parse_single_table
 from sunpy.io.cdf import read_cdf
 
 
-warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
-
 """
 Example code that loads low latency (ll) electron and proton (+alphas) fluxes
 (and errors) for 'ept' 'north' telescope from Apr 15 2021 to Apr 16 2021 into
@@ -757,7 +755,8 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None,
         # manual replace FILLVALUES in dataframes with np.nan
         # t_cdf_file.varattsget("Ion_Flux")["FILLVAL"][0] = -1e+31
         # same for l2 & ll and het & ept and e, p/ion, alpha
-        # remove this (i.e. following to lines) when sunpy's read_cdf is updated and replaces FILLVAL directly, see
+        # remove this (i.e. following two lines) when sunpy's read_cdf is updated,
+        # and FILLVAL will be replaced directly, see
         # https://github.com/sunpy/sunpy/issues/5908
         df_epd_p = df_epd_p.replace(-1e+31, np.nan)
         df_epd_e = df_epd_e.replace(-1e+31, np.nan)
@@ -783,6 +782,10 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None,
                 t_cdf_file.varget('Alpha_Bins_Low_Energy')
             energies_dict["Alpha_Bins_Width"] = \
                 t_cdf_file.varget('Alpha_Bins_Width')
+
+        # name index column (instead of e.g. 'EPOCH' or 'EPOCH_1')
+        df_epd_p.index.names = ['Time']
+        df_epd_e.index.names = ['Time']
 
     '''
     Careful if adding more species - they might have different EPOCH
@@ -882,8 +885,13 @@ def _read_step_cdf(level, startdate, enddate=None, path=None,
             col_list = []
             for key in param_list:
                 try:
-                    col_list.append(pd.DataFrame(cdffile[key],
-                                    index=cdffile['EPOCH']))
+                    t_df = pd.DataFrame(cdffile[key], index=cdffile['EPOCH'])
+
+                    # Replace FILLVAL dynamically for each element of param_list
+                    fillval = cdffile.varattsget(key)["FILLVAL"]
+                    t_df = t_df.replace(fillval, np.nan)
+
+                    col_list.append(t_df)
                 except TypeError:
                     print(' ')
                     print("WARNING: Gap in dataframe due to missing cdf file.")
@@ -901,8 +909,7 @@ def _read_step_cdf(level, startdate, enddate=None, path=None,
         datetimes = cdflib.cdfepoch.encode(np.int_(datadf.index))
         datadf.index = pd.to_datetime(datetimes)
 
-        # Finally make sure that bad values are set to nan:
-        datadf = datadf.replace(-1e+31, np.nan)
+        datadf.index.names = ['Time']
 
     '''
     Careful if adding more species - they might have different EPOCH
