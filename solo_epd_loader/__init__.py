@@ -852,7 +852,7 @@ def _read_step_cdf(level, startdate, enddate=None, path=None,
     else:
         all_cdf = []
         for file in filelist:
-            all_cdf.append(cdflib.cdfread.CDF(file))
+            all_cdf.append(cdflib.CDF(file))
 
         if level == 'l2':
             param_list = ['Integral_Flux', 'Magnet_Flux', 'Integral_Rate',
@@ -860,24 +860,24 @@ def _read_step_cdf(level, startdate, enddate=None, path=None,
                           'Integral_Uncertainty']
             # set up the dictionary:
             energies_dict = \
-                {"Bins_Text": all_cdf[0]['Bins_Text'],
-                 "Bins_Low_Energy": all_cdf[0]['Bins_Low_Energy'],
-                 "Bins_Width": all_cdf[0]['Bins_Width'],
-                 "Sector_Bins_Text": all_cdf[0]['Sector_Bins_Text'],
-                 "Sector_Bins_Low_Energy": all_cdf[0]['Sector_Bins_Low_Energy'],
-                 "Sector_Bins_Width": all_cdf[0]['Sector_Bins_Width']
+                {"Bins_Text": all_cdf[0].varget('Bins_Text'),
+                 "Bins_Low_Energy": all_cdf[0].varget('Bins_Low_Energy'),
+                 "Bins_Width": all_cdf[0].varget('Bins_Width'),
+                 "Sector_Bins_Text": all_cdf[0].varget('Sector_Bins_Text'),
+                 "Sector_Bins_Low_Energy": all_cdf[0].varget('Sector_Bins_Low_Energy'),
+                 "Sector_Bins_Width": all_cdf[0].varget('Sector_Bins_Width')
                  }
         if level == 'll':
             param_list = ['Integral_Flux', 'Ion_Flux', 'Integral_Flux_Sigma',
                           'Ion_Flux_Sigma']
             # set up the dictionary:
             energies_dict = \
-                {"Integral_Bins_Text": all_cdf[0]['Integral_Bins_Text'],
-                 "Integral_Bins_Low_Energy": all_cdf[0]['Integral_Bins_Low_Energy'],
-                 "Integral_Bins_Width": all_cdf[0]['Integral_Bins_Width'],
-                 "Ion_Bins_Text": all_cdf[0]['Ion_Bins_Text'],
-                 "Ion_Bins_Low_Energy": all_cdf[0]['Ion_Bins_Low_Energy'],
-                 "Ion_Bins_Width": all_cdf[0]['Ion_Bins_Width']
+                {"Integral_Bins_Text": all_cdf[0].varget('Integral_Bins_Text'),
+                 "Integral_Bins_Low_Energy": all_cdf[0].varget('Integral_Bins_Low_Energy'),
+                 "Integral_Bins_Width": all_cdf[0].varget('Integral_Bins_Width'),
+                 "Ion_Bins_Text": all_cdf[0].varget('Ion_Bins_Text'),
+                 "Ion_Bins_Low_Energy": all_cdf[0].varget('Ion_Bins_Low_Energy'),
+                 "Ion_Bins_Width": all_cdf[0].varget('Ion_Bins_Width')
                  }
 
         df_list = []
