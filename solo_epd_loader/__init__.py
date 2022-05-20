@@ -904,9 +904,7 @@ def _read_step_cdf(level, startdate, enddate=None, path=None,
         datadf = pd.concat(df_list)
 
         # transform the index of the dataframe into pd_datetime
-        # notice the transform alldata.index -> np.int_ so that encode()
-        # understands the format
-        datetimes = cdflib.cdfepoch.encode(np.int_(datadf.index))
+        datetimes = cdflib.cdfepoch.encode(datadf.index.values)
         datadf.index = pd.to_datetime(datetimes)
 
         datadf.index.names = ['Time']
