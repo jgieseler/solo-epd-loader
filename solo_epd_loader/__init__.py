@@ -584,8 +584,8 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None,
     filelist = _check_duplicates(filelist, verbose=True)
 
     if len(filelist) == 0:
-        raise Exception('WARNING: No corresponding data files found! ' +
-                        'Try different settings, path or autodownload.')
+        raise UserWarning('WARNING: No corresponding data files found! ' +
+                          'Try different settings, path or autodownload.')
         df_epd_p = []
         df_epd_e = []
         energies_dict = []
@@ -845,8 +845,8 @@ def _read_step_cdf(level, startdate, enddate=None, path=None,
     filelist = _check_duplicates(filelist, verbose=True)
 
     if len(filelist) == 0:
-        raise Exception('WARNING: No corresponding data files found! ' +
-                        'Try different settings, path or autodownload.')
+        raise UserWarning('WARNING: No corresponding data files found! ' +
+                          'Try different settings, path or autodownload.')
         datadf = []
         energies_dict = []
     else:
