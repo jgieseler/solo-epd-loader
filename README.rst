@@ -24,7 +24,9 @@ Current caveats:
 - For STEP, the sectored data is not yet available.
 - The Suprathermal Ion Spectrograph (SIS) is not yet included. 
 
-**Please always refer to the** `official EPD data description <http://espada.uah.es/epd/EPD_data.php>`_ **before using the data!**
+Disclaimer
+----------
+This software is provided "as is", with no guarantee. It is no official data source, and not officially endorsed by the corresponding instrument teams. **Please always refer to the** `official EPD data description <http://espada.uah.es/epd/EPD_data.php>`_ **before using the data!**
 
 Installation
 ------------
