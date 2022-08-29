@@ -21,7 +21,7 @@ Current caveats:
 
 - Only the standard ``rates`` data products are supported (i.e., no ``burst`` or ``high cadence`` data).
 - Only electrons, protons and alpha particles are processed (i.e., for HET He3, He4, C, N, O, Fe are omitted at the moment).
-- For STEP, the sectored data is not yet available.
+- For STEP, the sectored data is not yet available, and data is only available until Oct 2021 due to the change of the data product (will be updated soon).
 - The Suprathermal Ion Spectrograph (SIS) is not yet included. 
 
 Disclaimer
