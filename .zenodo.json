@@ -1,0 +1,19 @@
+{
+    "description": "Data loader (and downloader) for Solar Orbiter/EPD energetic charged particle sensors EPT, HET, and STEP. Supports level 2 and low latency data provided by ESA's Solar Orbiter Archive. ",
+    "license": "BSD-3-Clause",
+    "upload_type": "software",
+    "creators": [
+        {
+            "name": "Jan Gieseler,  Jan",
+            "orcid": "0000-0003-1848-7067",
+            "affiliation": "University of Turku"
+        },
+        {
+            "name": "Palmroos, Christian",
+            "orcid": "0000-0002-7778-5454",
+            "affiliation": "University of Turku"
+        }
+    ],
+    "access_right": "open",
+    "grants": [{"id":"101004159"}]
+}
