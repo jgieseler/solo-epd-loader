@@ -757,8 +757,8 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None,
         # remove this (i.e. following two lines) when sunpy's read_cdf is updated,
         # and FILLVAL will be replaced directly, see
         # https://github.com/sunpy/sunpy/issues/5908
-        df_epd_p = df_epd_p.replace(-1e+31, np.nan)
-        df_epd_e = df_epd_e.replace(-1e+31, np.nan)
+        df_epd_p = df_epd_p.replace(np.float32(-1e+31), np.nan)
+        df_epd_e = df_epd_e.replace(np.float32(-1e+31), np.nan)
 
         energies_dict = {protons+"_Bins_Text":
                          t_cdf_file.varget(protons+'_Bins_Text'),
