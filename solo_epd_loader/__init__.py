@@ -386,7 +386,7 @@ def get_available_soar_files(startdate, enddate, sensor, level='l2'):
 
     # convert bytestrings to unicode, from stackoverflow.com/a/67051068/2336056
     for col, dtype in df.dtypes.items():
-        if dtype == np.object:  # Only process object columns.
+        if dtype == object:  # Only process object columns.
             # decode, or return original value if decode return Nan
             df[col] = df[col].str.decode('utf-8').fillna(df[col])
 
