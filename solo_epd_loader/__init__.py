@@ -21,6 +21,10 @@ import numpy as np
 import pandas as pd
 from astropy.io.votable import parse_single_table
 from sunpy.io.cdf import read_cdf
+from sunpy.timeseries import TimeSeries
+
+# omit Pandas' PerformanceWarning
+warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
 
 
 """
@@ -211,10 +215,15 @@ def _get_step_filelist(level, startdate, enddate, path,
         l_str = 'L2'
         t_str = ''
 
+    if startdate <= 20211022:
+        product = 'rates'
+    if startdate > 20211022:
+        product = 'main'
+
     filelist = []
     for i in range(startdate, enddate+1):
         filelist = filelist + \
-            glob.glob(path+'solo_'+l_str+'_epd-'+sensor+'-rates_' +
+            glob.glob(path+'solo_'+l_str+'_epd-'+sensor+'-'+product+'_' +
                       str(i) + t_str + '_V*.cdf')
 
     if filenames_only:
@@ -290,10 +299,14 @@ def _epd_l2_download(date, path, sensor, viewing=None):
     tqdm_available, download_url = _load_tqdm(verbose=True)
 
     if sensor.lower() == 'step':
+        if date <= 20211022:
+            product = 'rates'
+        if date > 20211022:
+            product = 'main'
         url = 'http://soar.esac.esa.int/soar-sl-tap/data?' + \
-            'retrieval_type=LAST_PRODUCT&data_item_id=solo_L2_epd-' + \
-            sensor.lower()+'-rates_'+str(date) + \
-            '&product_type=SCIENCE'
+              'retrieval_type=LAST_PRODUCT&data_item_id=solo_L2_epd-' + \
+              sensor.lower()+'-'+product+'_'+str(date) + \
+              '&product_type=SCIENCE'
     else:
         url = 'http://soar.esac.esa.int/soar-sl-tap/data?' + \
             'retrieval_type=LAST_PRODUCT&data_item_id=solo_L2_epd-' + \
@@ -388,8 +401,12 @@ def get_available_soar_files(startdate, enddate, sensor, level='l2'):
     # filelist = df['filename'][df['sensor'] == sensor.upper()].sort_values()
     filelist = [s for s in df['file_name'].values if sensor.lower() in s]
 
-    # list filenames for 'rates' type (i.e., remove 'hcad')
-    filelist = [s for s in filelist if "rates" in s]
+    if sensor.lower() == 'step' and startdate > 20211022:
+        # list filenames for 'main' type (i.e., remove 'hcad')
+        filelist = [s for s in filelist if "main" in s]
+    else:
+        # list filenames for 'rates' type (i.e., remove 'hcad')
+        filelist = [s for s in filelist if "rates" in s]
 
     # filelist.sort()
     if len(filelist) == 0:
@@ -794,8 +811,7 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None,
     return df_epd_p, df_epd_e, energies_dict
 
 
-def _read_step_cdf(level, startdate, enddate=None, path=None,
-                   autodownload=False):
+def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False):
     """
     INPUT:
         level: 'll' or 'l2' (string)
@@ -832,80 +848,93 @@ def _read_step_cdf(level, startdate, enddate=None, path=None,
     if enddate is None:
         enddate = startdate
 
-    # if True, check online available files and download if not locally present
-    if autodownload:
-        _autodownload_cdf(startdate, enddate, sensor.lower(), level.lower(),
-                          path)
-
-    # get list of local files for date range
-    filelist = _get_step_filelist(level.lower(), startdate, enddate, path=path)
-
-    # check for duplicate files with different version numbers and remove them
-    filelist = _check_duplicates(filelist, verbose=True)
-
-    if len(filelist) == 0:
-        warnings.warn('WARNING: No corresponding data files found! Try different settings, path or autodownload.')
+    # check if Oct 22 2021 is within time interval; at that date the data product changed!
+    if startdate <= 20211022:
+        product = 'rates'
+    if startdate > 20211022:
+        product = 'main'
+    if startdate < 20211022 and enddate > 20211022:
+        warnings.warn('WARNING: During the selected time range the STEP data product changed (on Oct 22 2021)! Please adjust time range and run again.')
         datadf = []
         energies_dict = []
     else:
-        all_cdf = []
-        for file in filelist:
-            all_cdf.append(cdflib.CDF(file))
 
-        if level == 'l2':
-            param_list = ['Integral_Flux', 'Magnet_Flux', 'Integral_Rate',
-                          'Magnet_Rate', 'Magnet_Uncertainty',
-                          'Integral_Uncertainty']
-            # set up the dictionary:
-            energies_dict = \
-                {"Bins_Text": all_cdf[0].varget('Bins_Text'),
-                 "Bins_Low_Energy": all_cdf[0].varget('Bins_Low_Energy'),
-                 "Bins_Width": all_cdf[0].varget('Bins_Width'),
-                 "Sector_Bins_Text": all_cdf[0].varget('Sector_Bins_Text'),
-                 "Sector_Bins_Low_Energy": all_cdf[0].varget('Sector_Bins_Low_Energy'),
-                 "Sector_Bins_Width": all_cdf[0].varget('Sector_Bins_Width')
-                 }
-        if level == 'll':
-            param_list = ['Integral_Flux', 'Ion_Flux', 'Integral_Flux_Sigma',
-                          'Ion_Flux_Sigma']
-            # set up the dictionary:
-            energies_dict = \
-                {"Integral_Bins_Text": all_cdf[0].varget('Integral_Bins_Text'),
-                 "Integral_Bins_Low_Energy": all_cdf[0].varget('Integral_Bins_Low_Energy'),
-                 "Integral_Bins_Width": all_cdf[0].varget('Integral_Bins_Width'),
-                 "Ion_Bins_Text": all_cdf[0].varget('Ion_Bins_Text'),
-                 "Ion_Bins_Low_Energy": all_cdf[0].varget('Ion_Bins_Low_Energy'),
-                 "Ion_Bins_Width": all_cdf[0].varget('Ion_Bins_Width')
-                 }
+        # if True, check online available files and download if not locally present
+        if autodownload:
+            _autodownload_cdf(startdate, enddate, sensor.lower(), level.lower(), path)
 
-        df_list = []
-        for cdffile in all_cdf:
-            col_list = []
-            for key in param_list:
+        # get list of local files for date range
+        filelist = _get_step_filelist(level.lower(), startdate, enddate, path=path)
+
+        # check for duplicate files with different version numbers and remove them
+        filelist = _check_duplicates(filelist, verbose=True)
+
+        if len(filelist) == 0:
+            warnings.warn('WARNING: No corresponding data files found! Try different settings, path or autodownload.')
+            datadf = []
+            energies_dict = []
+        elif product == 'rates':
+            all_cdf = []
+            for file in filelist:
+                all_cdf.append(cdflib.CDF(file))
+
+            if level == 'l2':
+                param_list = ['Integral_Flux', 'Magnet_Flux', 'Integral_Rate',
+                              'Magnet_Rate', 'Magnet_Uncertainty',
+                              'Integral_Uncertainty']
+                # set up the dictionary:
+                energies_dict = \
+                    {"Bins_Text": all_cdf[0].varget('Bins_Text'),
+                     "Bins_Low_Energy": all_cdf[0].varget('Bins_Low_Energy'),
+                     "Bins_Width": all_cdf[0].varget('Bins_Width'),
+                     "Sector_Bins_Text": all_cdf[0].varget('Sector_Bins_Text'),
+                     "Sector_Bins_Low_Energy": all_cdf[0].varget('Sector_Bins_Low_Energy'),
+                     "Sector_Bins_Width": all_cdf[0].varget('Sector_Bins_Width')
+                     }
+            if level == 'll':
+                param_list = ['Integral_Flux', 'Ion_Flux', 'Integral_Flux_Sigma',
+                              'Ion_Flux_Sigma']
+                # set up the dictionary:
+                energies_dict = \
+                    {"Integral_Bins_Text": all_cdf[0].varget('Integral_Bins_Text'),
+                     "Integral_Bins_Low_Energy": all_cdf[0].varget('Integral_Bins_Low_Energy'),
+                     "Integral_Bins_Width": all_cdf[0].varget('Integral_Bins_Width'),
+                     "Ion_Bins_Text": all_cdf[0].varget('Ion_Bins_Text'),
+                     "Ion_Bins_Low_Energy": all_cdf[0].varget('Ion_Bins_Low_Energy'),
+                     "Ion_Bins_Width": all_cdf[0].varget('Ion_Bins_Width')
+                     }
+
+            df_list = []
+            for cdffile in all_cdf:
+                col_list = []
+                for key in param_list:
+                    try:
+                        t_df = pd.DataFrame(cdffile[key], index=cdffile['EPOCH'])
+
+                        # Replace FILLVAL dynamically for each element of param_list
+                        fillval = cdffile.varattsget(key)["FILLVAL"]
+                        t_df = t_df.replace(fillval, np.nan)
+
+                        col_list.append(t_df)
+                    except TypeError:
+                        print(' ')
+                        print("WARNING: Gap in dataframe due to missing cdf file.")
+                        break
                 try:
-                    t_df = pd.DataFrame(cdffile[key], index=cdffile['EPOCH'])
+                    temp_df = pd.concat(col_list, axis=1, keys=param_list)
+                    df_list.append(temp_df)
+                except ValueError:
+                    continue
+            datadf = pd.concat(df_list)
 
-                    # Replace FILLVAL dynamically for each element of param_list
-                    fillval = cdffile.varattsget(key)["FILLVAL"]
-                    t_df = t_df.replace(fillval, np.nan)
+            # transform the index of the dataframe into pd_datetime
+            datetimes = cdflib.cdfepoch.encode(datadf.index.values)
+            datadf.index = pd.to_datetime(datetimes)
 
-                    col_list.append(t_df)
-                except TypeError:
-                    print(' ')
-                    print("WARNING: Gap in dataframe due to missing cdf file.")
-                    break
-            try:
-                temp_df = pd.concat(col_list, axis=1, keys=param_list)
-                df_list.append(temp_df)
-            except ValueError:
-                continue
-        datadf = pd.concat(df_list)
+            datadf.index.names = ['Time']
 
-        # transform the index of the dataframe into pd_datetime
-        datetimes = cdflib.cdfepoch.encode(datadf.index.values)
-        datadf.index = pd.to_datetime(datetimes)
-
-        datadf.index.names = ['Time']
+        elif product == 'main':
+            datadf, energies_dict = _read_new_step_cdf(filelist)
 
     '''
     Careful if adding more species - they might have different EPOCH
@@ -913,3 +942,90 @@ def _read_step_cdf(level, startdate, enddate=None, path=None,
     '''
 
     return datadf, energies_dict
+
+
+def _read_new_step_cdf(files):
+    """
+    Function that reads in new format (since Oct 2021) STEP CDF 'files'.
+    EPOCH_X dependent data is obtained as Pandas Dataframe via sunpy.
+    Time-independent meta data is read in from the first cdf file via cdflib.
+    """
+    # read electron correction factors and meta data via cdflib
+    cdf = cdflib.CDF(files[0])
+    Electron_Flux_Mult = {'Electron_Avg_Flux_Mult': cdf['Electron_Avg_Flux_Mult']}
+    for i in range(1, 16):
+        Electron_Flux_Mult['Electron_'+str(i).rjust(2, '0')+'_Flux_Mult'] = cdf['Electron_'+str(i).rjust(2, '0')+'_Flux_Mult']
+    # df_Electron_Flux_Mult = pd.DataFrame(Electron_Flux_Mult)  # get dataframe from dict - not needed atm.
+
+    meta = {'Bins_Low_Energy': cdf['Bins_Low_Energy']}
+    for i in ['Bins_Width', 'Bins_Text', 'Electron_Bins_Low_Energy', 'Electron_Bins_Width', 'Electron_Bins_Text', 'XYZ', 'XYZ_Pixels', 'XYZ_Labels', 'RTN_Labels']:
+        meta[i] = cdf[i]
+    
+    meta['df_rtn_desc'] = cdf.varattsget('RTN')['CATDESC']
+    # TODO: add to meta: 'Sector_Bins_Text', 'Sector_Bins_Low_Energy', 'Sector_Bins_Width' -- don't exist in new data product?
+
+    del(cdf)
+
+    # use sunpy to get Pandas DataFrame of EPOCH_X-dependent variables
+    # data = TimeSeries(files, concatenate=True)
+    # df = data.to_dataframe()
+    # del(data)
+
+    df = pd.DataFrame()
+    for f in files:
+        print('Loading', f)
+        data = TimeSeries(f, concatenate=True)
+        print('convert to temporary dataframe (tdf)...')
+        tdf = data.to_dataframe()
+        # drop 'Rate's from tdf
+        all_columns = False
+        if not all_columns:
+            print('dropping Rates from tdf')
+            tdf.drop(columns=tdf.filter(like='Rate').columns, inplace=True)
+        print('merge dataframes...')
+        df = pd.concat([df, tdf])
+        del(data, tdf)
+
+    # move RTN and HCI to different df's because they have different time indices
+    print('move RTN')
+    df_rtn = df[['RTN_0', 'RTN_1', 'RTN_2']].dropna(how='all')
+    df = df.drop(columns=['RTN_0', 'RTN_1', 'RTN_2']).dropna(how='all')  # remove lines only containing NaN's (all)
+    print('move HCI')
+    df_hci = df[['HCI_Lat', 'HCI_Lon', 'HCI_R']].dropna(how='all')
+    df = df.drop(columns=['HCI_Lat', 'HCI_Lon', 'HCI_R']).dropna(how='all')  # remove lines only containing NaN's (all)
+    meta['df_rtn'] = df_rtn
+    del(df_rtn)
+    meta['df_hci'] = df_hci
+    del(df_hci)
+
+    """
+    # what to do with this? not read in by sunpy because of multi-dimensionality. skip for now
+    RTN_Pixels              (EPOCH_1, Pixels, dim1) float32 0.8412 ... -0.2708
+                            CATDESC: 'Particle flow direction (unit vector) in RTN coordinates for each pixel'
+    """
+    meta['RTN_Pixels'] = 'CDF var RTN_Pixels (Particle flow direction (unit vector) in RTN coordinates for each pixel) left out as of now because it is multidimensional'
+
+    print('calculate electron fluxes')
+    # calculate electron fluxes from Magnet and Integral Fluxes using correction factors
+    for i in range(len(Electron_Flux_Mult['Electron_Avg_Flux_Mult'])):  # 32 energy channels
+        df[f'Electron_Avg_Flux_{i}'] = Electron_Flux_Mult['Electron_Avg_Flux_Mult'][i] * (df[f'Integral_Avg_Flux_{i}'] - df[f'Magnet_Avg_Flux_{i}'])
+        for pix in [str(n).rjust(2, '0') for n in range(1, 16)]:  # pixel 01 - 15 (00 is background pixel)
+            # print(f'Electron_{pix}_Flux_{i}', f"Electron_Flux_Mult['Electron_{pix}_Flux_Mult'][i]", f'Integral_{pix}_Flux_{i}', f'Magnet_{pix}_Flux_{i}')
+            df[f'Electron_{pix}_Flux_{i}'] = Electron_Flux_Mult[f'Electron_{pix}_Flux_Mult'][i] * (df[f'Integral_{pix}_Flux_{i}'] - df[f'Magnet_{pix}_Flux_{i}'])
+
+    # TODO: multi-index (or rather multi-column) dataframe like previous product?
+    # TODO: FILLVALS replaced in TimeSeries??
+
+    # df_ions = df[df.columns[df.columns.str.startswith('Magnet_Avg_Flux_')]]
+
+    # df3['QUALITY_FLAG'] = df['QUALITY_FLAG']
+    # df3['QUALITY_BITMASK'] = df['QUALITY_BITMASK']
+    # df3['SMALL_PIXELS_FLAG'] = df['SMALL_PIXELS_FLAG']
+
+    # df3 = pd.DataFrame()
+    # for i in range(32):
+    #     df3[f'Ion_Avg_Flux_{i}'] = df[f'Magnet_Avg_Flux_{i}']
+    # for i in range(32):
+    #     df3[f'Electron_Avg_Flux_{i}'] = Electron_Flux_Mult['Electron_Avg_Flux_Mult'][i] * (df[f'Integral_Avg_Flux_{i}'] - df[f'Magnet_Avg_Flux_{i}'])
+
+    return df, meta
