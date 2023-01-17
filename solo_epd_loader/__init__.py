@@ -1013,6 +1013,10 @@ def _read_new_step_cdf(files):
             # print(f'Electron_{pix}_Flux_{i}', f"Electron_Flux_Mult['Electron_{pix}_Flux_Mult'][i]", f'Integral_{pix}_Flux_{i}', f'Magnet_{pix}_Flux_{i}')
             df[f'Electron_{pix}_Flux_{i}'] = Electron_Flux_Mult[f'Electron_{pix}_Flux_Mult'][i] * (df[f'Integral_{pix}_Flux_{i}'] - df[f'Magnet_{pix}_Flux_{i}'])
 
+    # replace all negative values in dataframe with np.nan (applies for electron fluxes that get negative in their calculation)
+    # TODO: verify / write only explicitally for electron fluxes!
+    df = df.mask(df <= 0)
+
     # TODO: multi-index (or rather multi-column) dataframe like previous product?
     # TODO: FILLVALS replaced in TimeSeries??
 
