@@ -774,8 +774,12 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None,
         # remove this (i.e. following two lines) when sunpy's read_cdf is updated,
         # and FILLVAL will be replaced directly, see
         # https://github.com/sunpy/sunpy/issues/5908
-        df_epd_p = df_epd_p.replace(np.float32(-1e+31), np.nan)
-        df_epd_e = df_epd_e.replace(np.float32(-1e+31), np.nan)
+        # df_epd_p = df_epd_p.replace(np.float32(-1e+31), np.nan)
+        # df_epd_e = df_epd_e.replace(np.float32(-1e+31), np.nan)
+        # 1 Mar 2023: previous 2 lines removed because they are taken care of with sunpy
+        # 4.1.0:
+        # https://docs.sunpy.org/en/stable/whatsnew/changelog.html#id7
+        # https://github.com/sunpy/sunpy/pull/5956
 
         energies_dict = {protons+"_Bins_Text":
                          t_cdf_file.varget(protons+'_Bins_Text'),
@@ -960,7 +964,7 @@ def _read_new_step_cdf(files):
     meta = {'Bins_Low_Energy': cdf['Bins_Low_Energy']}
     for i in ['Bins_Width', 'Bins_Text', 'Electron_Bins_Low_Energy', 'Electron_Bins_Width', 'Electron_Bins_Text', 'XYZ', 'XYZ_Pixels', 'XYZ_Labels', 'RTN_Labels']:
         meta[i] = cdf[i]
-    
+
     meta['df_rtn_desc'] = cdf.varattsget('RTN')['CATDESC']
     # TODO: add to meta: 'Sector_Bins_Text', 'Sector_Bins_Low_Energy', 'Sector_Bins_Width' -- don't exist in new data product?
 
