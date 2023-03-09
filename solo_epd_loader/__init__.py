@@ -1024,13 +1024,19 @@ def _read_new_step_cdf(files, only_averages=False):
     # calculate electron fluxes from Magnet and Integral Fluxes using correction factors
     for i in range(len(Electron_Flux_Mult['Electron_Avg_Flux_Mult'])):  # 32 energy channels
         df[f'Electron_Avg_Flux_{i}'] = Electron_Flux_Mult['Electron_Avg_Flux_Mult'][i] * (df[f'Integral_Avg_Flux_{i}'] - df[f'Magnet_Avg_Flux_{i}'])
+        df[f'Electron_Avg_Uncertainty_{i}'] = \
+            Electron_Flux_Mult['Electron_Avg_Flux_Mult'][i] * np.sqrt(df[f'Integral_Avg_Uncertainty_{i}']**2 + df[f'Magnet_Avg_Uncertainty_{i}']**2)
         if not only_averages:
             for pix in [str(n).rjust(2, '0') for n in range(1, 16)]:  # pixel 01 - 15 (00 is background pixel)
                 # print(f'Electron_{pix}_Flux_{i}', f"Electron_Flux_Mult['Electron_{pix}_Flux_Mult'][i]", f'Integral_{pix}_Flux_{i}', f'Magnet_{pix}_Flux_{i}')
                 df[f'Electron_{pix}_Flux_{i}'] = Electron_Flux_Mult[f'Electron_{pix}_Flux_Mult'][i] * (df[f'Integral_{pix}_Flux_{i}'] - df[f'Magnet_{pix}_Flux_{i}'])
 
+                df[f'Electron_{pix}_Uncertainty_{i}'] = \
+                    Electron_Flux_Mult[f'Electron_{pix}_Flux_Mult'][i] * np.sqrt(df[f'Integral_{pix}_Uncertainty_{i}']**2 + df[f'Magnet_{pix}_Uncertainty_{i}']**2)
+
     # replace all negative values in dataframe with np.nan (applies for electron fluxes that get negative in their calculation)
     # TODO: verify / write only explicitally for electron fluxes!
+    # TODO: use mask_conta approach from previous scripts!
     df = df.mask(df <= 0)
 
     # TODO: multi-index (or rather multi-column) dataframe like previous product?
