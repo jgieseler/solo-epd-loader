@@ -439,7 +439,7 @@ def _autodownload_cdf(startdate, enddate, sensor, level, path):
 
 
 def epd_load(sensor, level, startdate, enddate=None, viewing=None, path=None,
-             autodownload=False):
+             autodownload=False, only_averages=False):
     """
     Load SolO/EPD data
 
@@ -474,6 +474,10 @@ def epd_load(sensor, level, startdate, enddate=None, viewing=None, path=None,
     autodownload : bool, optional
         If True, will try to download missing data files from SOAR, by default
         False.
+    only_averages : bool, optional
+        If True, will for STEP only return the averaged fluxes, and not the data
+        of each of the 15 Pixels. This will reduce the memory consumption. By
+        default False.
 
     Returns
     -------
@@ -531,7 +535,7 @@ def epd_load(sensor, level, startdate, enddate=None, viewing=None, path=None,
 
     if sensor.lower() == 'step':
         datadf, energies_dict = \
-            _read_step_cdf(level, startdate, enddate, path, autodownload)
+            _read_step_cdf(level, startdate, enddate, path, autodownload, only_averages)
         return datadf, energies_dict
     if sensor.lower() == 'ept' or sensor.lower() == 'het':
         if viewing is None:
@@ -815,7 +819,7 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None,
     return df_epd_p, df_epd_e, energies_dict
 
 
-def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False):
+def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False, only_averages=False):
     """
     INPUT:
         level: 'll' or 'l2' (string)
@@ -938,7 +942,7 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
             datadf.index.names = ['Time']
 
         elif product == 'main':
-            datadf, energies_dict = _read_new_step_cdf(filelist)
+            datadf, energies_dict = _read_new_step_cdf(filelist, only_averages)
 
     '''
     Careful if adding more species - they might have different EPOCH
@@ -948,7 +952,7 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
     return datadf, energies_dict
 
 
-def _read_new_step_cdf(files):
+def _read_new_step_cdf(files, only_averages=False):
     """
     Function that reads in new format (since Oct 2021) STEP CDF 'files'.
     EPOCH_X dependent data is obtained as Pandas Dataframe via sunpy.
@@ -957,9 +961,10 @@ def _read_new_step_cdf(files):
     # read electron correction factors and meta data via cdflib
     cdf = cdflib.CDF(files[0])
     Electron_Flux_Mult = {'Electron_Avg_Flux_Mult': cdf['Electron_Avg_Flux_Mult']}
-    for i in range(1, 16):
-        Electron_Flux_Mult['Electron_'+str(i).rjust(2, '0')+'_Flux_Mult'] = cdf['Electron_'+str(i).rjust(2, '0')+'_Flux_Mult']
-    # df_Electron_Flux_Mult = pd.DataFrame(Electron_Flux_Mult)  # get dataframe from dict - not needed atm.
+    if not only_averages:
+        for i in range(1, 16):
+            Electron_Flux_Mult['Electron_'+str(i).rjust(2, '0')+'_Flux_Mult'] = cdf['Electron_'+str(i).rjust(2, '0')+'_Flux_Mult']
+        # df_Electron_Flux_Mult = pd.DataFrame(Electron_Flux_Mult)  # get dataframe from dict - not needed atm.
 
     meta = {'Bins_Low_Energy': cdf['Bins_Low_Energy']}
     for i in ['Bins_Width', 'Bins_Text', 'Electron_Bins_Low_Energy', 'Electron_Bins_Width', 'Electron_Bins_Text', 'XYZ', 'XYZ_Pixels', 'XYZ_Labels', 'RTN_Labels']:
@@ -986,6 +991,12 @@ def _read_new_step_cdf(files):
         if not all_columns:
             print('dropping Rates from tdf')
             tdf.drop(columns=tdf.filter(like='Rate').columns, inplace=True)
+        # drop per-Pixel data from tdf
+        if only_averages:
+            print('dropping Pixels from tdf')
+            drop_cols = ['Integral_0', 'Integral_1', 'Magnet_0', 'Magnet_1']
+            for col in drop_cols:
+                tdf.drop(columns=tdf.filter(like=col).columns, inplace=True)
         print('merge dataframes...')
         df = pd.concat([df, tdf])
         del(data, tdf)
@@ -1013,9 +1024,10 @@ def _read_new_step_cdf(files):
     # calculate electron fluxes from Magnet and Integral Fluxes using correction factors
     for i in range(len(Electron_Flux_Mult['Electron_Avg_Flux_Mult'])):  # 32 energy channels
         df[f'Electron_Avg_Flux_{i}'] = Electron_Flux_Mult['Electron_Avg_Flux_Mult'][i] * (df[f'Integral_Avg_Flux_{i}'] - df[f'Magnet_Avg_Flux_{i}'])
-        for pix in [str(n).rjust(2, '0') for n in range(1, 16)]:  # pixel 01 - 15 (00 is background pixel)
-            # print(f'Electron_{pix}_Flux_{i}', f"Electron_Flux_Mult['Electron_{pix}_Flux_Mult'][i]", f'Integral_{pix}_Flux_{i}', f'Magnet_{pix}_Flux_{i}')
-            df[f'Electron_{pix}_Flux_{i}'] = Electron_Flux_Mult[f'Electron_{pix}_Flux_Mult'][i] * (df[f'Integral_{pix}_Flux_{i}'] - df[f'Magnet_{pix}_Flux_{i}'])
+        if not only_averages:
+            for pix in [str(n).rjust(2, '0') for n in range(1, 16)]:  # pixel 01 - 15 (00 is background pixel)
+                # print(f'Electron_{pix}_Flux_{i}', f"Electron_Flux_Mult['Electron_{pix}_Flux_Mult'][i]", f'Integral_{pix}_Flux_{i}', f'Magnet_{pix}_Flux_{i}')
+                df[f'Electron_{pix}_Flux_{i}'] = Electron_Flux_Mult[f'Electron_{pix}_Flux_Mult'][i] * (df[f'Integral_{pix}_Flux_{i}'] - df[f'Magnet_{pix}_Flux_{i}'])
 
     # replace all negative values in dataframe with np.nan (applies for electron fluxes that get negative in their calculation)
     # TODO: verify / write only explicitally for electron fluxes!
