@@ -438,7 +438,7 @@ def _autodownload_cdf(startdate, enddate, sensor, level, path):
     return
 
 
-def epd_load(sensor, level, startdate, enddate=None, viewing=None, path=None,
+def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=None,
              autodownload=False, only_averages=False, contamination_threshold=False):
     """
     Load SolO/EPD data
@@ -452,8 +452,6 @@ def epd_load(sensor, level, startdate, enddate=None, viewing=None, path=None,
     ----------
     sensor : {'ept', 'het', 'step'}
         Defines EPD sensor
-    level : {'l2', 'll'}
-        Defines level of data product: level 2 ('l2') or low-latency ('ll')
     startdate : (datetime or int)
         Provides start date. Either a datetime object (e.g., dt.date(2021,12,31)
         or dt.datetime(2021,4,15)). Or a combined integer yyyymmdd with year
@@ -465,9 +463,12 @@ def epd_load(sensor, level, startdate, enddate=None, viewing=None, path=None,
         (yyyy), month (mm) and day (dd) with empty positions filled with zeros,
         e.g. 20210415
         (if no enddate is given, 'enddate = startdate' will be set)
+    level : {'l2', 'll'}, optional
+        Defines level of data product: level 2 ('l2') or low-latency ('ll'). By
+        default 'l2'
     viewing : {'sun', 'asun', 'north', 'south' or None}, optional
         Viewing direction of sensor. Needed for 'ept' or 'het'; for 'step'
-        shoule be None. By default None
+        should be None. By default None
     path : str, optional
         User-specified directory in which Solar Orbiter data is/should be
         organized; e.g. '/home/userxyz/solo/data/', by default None
