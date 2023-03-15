@@ -439,7 +439,7 @@ def _autodownload_cdf(startdate, enddate, sensor, level, path):
 
 
 def epd_load(sensor, level, startdate, enddate=None, viewing=None, path=None,
-             autodownload=False, only_averages=False):
+             autodownload=False, only_averages=False, contamination_threshold=False):
     """
     Load SolO/EPD data
 
@@ -477,6 +477,11 @@ def epd_load(sensor, level, startdate, enddate=None, viewing=None, path=None,
     only_averages : bool, optional
         If True, will for STEP only return the averaged fluxes, and not the data
         of each of the 15 Pixels. This will reduce the memory consumption. By
+        default False.
+    contamination_threshold : int or False, optional
+        If int, mask data that probably is contaminated (i.e., set it to nan)
+        using a contamination threshold of int. If False, don't alter the data
+        at all. Only implemented for new STEP data (after Oct 2021) so far. By
         default False.
 
     Returns
@@ -535,7 +540,7 @@ def epd_load(sensor, level, startdate, enddate=None, viewing=None, path=None,
 
     if sensor.lower() == 'step':
         datadf, energies_dict = \
-            _read_step_cdf(level, startdate, enddate, path, autodownload, only_averages)
+            _read_step_cdf(level, startdate, enddate, path, autodownload, only_averages, contamination_threshold)
         return datadf, energies_dict
     if sensor.lower() == 'ept' or sensor.lower() == 'het':
         if viewing is None:
@@ -819,7 +824,8 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None,
     return df_epd_p, df_epd_e, energies_dict
 
 
-def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False, only_averages=False):
+def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False,
+                   only_averages=False, contamination_threshold=False):
     """
     INPUT:
         level: 'll' or 'l2' (string)
@@ -941,8 +947,11 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
 
             datadf.index.names = ['Time']
 
+            if type(contamination_threshold) == int:
+                print("'contamination_threshold' not yet included for old STEP data!")
+
         elif product == 'main':
-            datadf, energies_dict = _read_new_step_cdf(filelist, only_averages)
+            datadf, energies_dict = _read_new_step_cdf(filelist, only_averages, contamination_threshold)
 
     '''
     Careful if adding more species - they might have different EPOCH
@@ -952,7 +961,7 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
     return datadf, energies_dict
 
 
-def _read_new_step_cdf(files, only_averages=False):
+def _read_new_step_cdf(files, only_averages=False, contamination_threshold=False):
     """
     Function that reads in new format (since Oct 2021) STEP CDF 'files'.
     EPOCH_X dependent data is obtained as Pandas Dataframe via sunpy.
@@ -1026,6 +1035,12 @@ def _read_new_step_cdf(files, only_averages=False):
         df[f'Electron_Avg_Flux_{i}'] = Electron_Flux_Mult['Electron_Avg_Flux_Mult'][i] * (df[f'Integral_Avg_Flux_{i}'] - df[f'Magnet_Avg_Flux_{i}'])
         df[f'Electron_Avg_Uncertainty_{i}'] = \
             Electron_Flux_Mult['Electron_Avg_Flux_Mult'][i] * np.sqrt(df[f'Integral_Avg_Uncertainty_{i}']**2 + df[f'Magnet_Avg_Uncertainty_{i}']**2)
+        if type(contamination_threshold) == int:
+            clean = (df[f'Integral_Avg_Flux_{i}'] - df[f'Magnet_Avg_Flux_{i}']) > contamination_threshold*df[f'Integral_Avg_Uncertainty_{i}']
+            # mask non-clean data
+            df[f'Electron_Avg_Flux_{i}'] = df[f'Electron_Avg_Flux_{i}'].mask(~clean)
+            df[f'Electron_Avg_Uncertainty_{i}'] = df[f'Electron_Avg_Uncertainty_{i}'].mask(~clean)
+
         if not only_averages:
             for pix in [str(n).rjust(2, '0') for n in range(1, 16)]:  # pixel 01 - 15 (00 is background pixel)
                 # print(f'Electron_{pix}_Flux_{i}', f"Electron_Flux_Mult['Electron_{pix}_Flux_Mult'][i]", f'Integral_{pix}_Flux_{i}', f'Magnet_{pix}_Flux_{i}')
@@ -1034,24 +1049,20 @@ def _read_new_step_cdf(files, only_averages=False):
                 df[f'Electron_{pix}_Uncertainty_{i}'] = \
                     Electron_Flux_Mult[f'Electron_{pix}_Flux_Mult'][i] * np.sqrt(df[f'Integral_{pix}_Uncertainty_{i}']**2 + df[f'Magnet_{pix}_Uncertainty_{i}']**2)
 
-    # replace all negative values in dataframe with np.nan (applies for electron fluxes that get negative in their calculation)
-    # TODO: verify / write only explicitally for electron fluxes!
-    # TODO: use mask_conta approach from previous scripts!
-    df = df.mask(df <= 0)
+                if type(contamination_threshold) == int:
+                    clean = (df[f'Integral_{pix}_Flux_{i}'] - df[f'Magnet_{pix}_Flux_{i}']) > contamination_threshold*df[f'Integral_{pix}_Uncertainty_{i}']
+                    # mask non-clean data
+                    df[f'Electron_{pix}_Flux_{i}'] = df[f'Electron_{pix}_Flux_{i}'].mask(~clean)
+                    df[f'Electron_{pix}_Uncertainty_{i}'] = df[f'Electron_{pix}_Uncertainty_{i}'].mask(~clean)
+
+    # TODO: replace all negative values in dataframe with np.nan (applies for electron fluxes that get negative in their calculation)
+    # ==> not needed any more after masking above?
+    # df = df.mask(df <= 0)
 
     # TODO: multi-index (or rather multi-column) dataframe like previous product?
-    # TODO: FILLVALS replaced in TimeSeries??
-
-    # df_ions = df[df.columns[df.columns.str.startswith('Magnet_Avg_Flux_')]]
 
     # df3['QUALITY_FLAG'] = df['QUALITY_FLAG']
     # df3['QUALITY_BITMASK'] = df['QUALITY_BITMASK']
     # df3['SMALL_PIXELS_FLAG'] = df['SMALL_PIXELS_FLAG']
-
-    # df3 = pd.DataFrame()
-    # for i in range(32):
-    #     df3[f'Ion_Avg_Flux_{i}'] = df[f'Magnet_Avg_Flux_{i}']
-    # for i in range(32):
-    #     df3[f'Electron_Avg_Flux_{i}'] = Electron_Flux_Mult['Electron_Avg_Flux_Mult'][i] * (df[f'Integral_Avg_Flux_{i}'] - df[f'Magnet_Avg_Flux_{i}'])
 
     return df, meta
