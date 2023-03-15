@@ -994,28 +994,28 @@ def _read_new_step_cdf(files, only_averages=False, contamination_threshold=False
     for f in files:
         print('Loading', f)
         data = TimeSeries(f, concatenate=True)
-        print('convert to temporary dataframe (tdf)...')
+        # print('convert to temporary dataframe (tdf)...')
         tdf = data.to_dataframe()
         # drop 'Rate's from tdf
         all_columns = False
         if not all_columns:
-            print('dropping Rates from tdf')
+            # print('dropping Rates from tdf')
             tdf.drop(columns=tdf.filter(like='Rate').columns, inplace=True)
         # drop per-Pixel data from tdf
         if only_averages:
-            print('dropping Pixels from tdf')
+            # print('dropping Pixels from tdf')
             drop_cols = ['Integral_0', 'Integral_1', 'Magnet_0', 'Magnet_1']
             for col in drop_cols:
                 tdf.drop(columns=tdf.filter(like=col).columns, inplace=True)
-        print('merge dataframes...')
+        # print('merge dataframes...')
         df = pd.concat([df, tdf])
         del(data, tdf)
 
     # move RTN and HCI to different df's because they have different time indices
-    print('move RTN')
+    # print('move RTN')
     df_rtn = df[['RTN_0', 'RTN_1', 'RTN_2']].dropna(how='all')
     df = df.drop(columns=['RTN_0', 'RTN_1', 'RTN_2']).dropna(how='all')  # remove lines only containing NaN's (all)
-    print('move HCI')
+    # print('move HCI')
     df_hci = df[['HCI_Lat', 'HCI_Lon', 'HCI_R']].dropna(how='all')
     df = df.drop(columns=['HCI_Lat', 'HCI_Lon', 'HCI_R']).dropna(how='all')  # remove lines only containing NaN's (all)
     meta['df_rtn'] = df_rtn
@@ -1030,7 +1030,6 @@ def _read_new_step_cdf(files, only_averages=False, contamination_threshold=False
     """
     meta['RTN_Pixels'] = 'CDF var RTN_Pixels (Particle flow direction (unit vector) in RTN coordinates for each pixel) left out as of now because it is multidimensional'
 
-    print('calculate electron fluxes')
     # calculate electron fluxes from Magnet and Integral Fluxes using correction factors
     for i in range(len(Electron_Flux_Mult['Electron_Avg_Flux_Mult'])):  # 32 energy channels
         df[f'Electron_Avg_Flux_{i}'] = Electron_Flux_Mult['Electron_Avg_Flux_Mult'][i] * (df[f'Integral_Avg_Flux_{i}'] - df[f'Magnet_Avg_Flux_{i}'])
