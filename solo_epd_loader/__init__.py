@@ -439,7 +439,7 @@ def _autodownload_cdf(startdate, enddate, sensor, level, path):
 
 
 def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=None,
-             autodownload=False, only_averages=False, contamination_threshold=False):
+             autodownload=False, only_averages=False, contamination_threshold=2):
     """
     Load SolO/EPD data
 
@@ -467,7 +467,7 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
         Defines level of data product: level 2 ('l2') or low-latency ('ll'). By
         default 'l2'
     viewing : {'sun', 'asun', 'north', 'south' or None}, optional
-        Viewing direction of sensor. Needed for 'ept' or 'het'; for 'step'
+        Viewing direction of sensor. Required for 'ept' or 'het'; for 'step'
         should be None. By default None
     path : str, optional
         User-specified directory in which Solar Orbiter data is/should be
@@ -480,10 +480,11 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
         of each of the 15 Pixels. This will reduce the memory consumption. By
         default False.
     contamination_threshold : int or False, optional
-        If int, mask data that probably is contaminated (i.e., set it to nan)
-        using a contamination threshold of int. If False, don't alter the data
-        at all. Only implemented for new STEP data (after Oct 2021) so far. By
-        default False.
+        If int, mask electron data that probably is contaminated (i.e., set it
+        to nan) using an integer contamination threshold following the equation:
+        Integral_Flux - Magnet_Flux > contamination_threshold * Integral_Uncertainty
+        If False, don't alter the data at all. Only implemented for new STEP
+        data (after Oct 2021) so far. By default 2.
 
     Returns
     -------
@@ -826,7 +827,7 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None,
 
 
 def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False,
-                   only_averages=False, contamination_threshold=False):
+                   only_averages=False, contamination_threshold=2):
     """
     INPUT:
         level: 'll' or 'l2' (string)
@@ -949,7 +950,7 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
             datadf.index.names = ['Time']
 
             if type(contamination_threshold) == int:
-                print("'contamination_threshold' not yet included for old STEP data!")
+                print("'contamination_threshold' not yet included for old STEP data (before Oct 22, 2021)!")
 
         elif product == 'main':
             datadf, energies_dict = _read_new_step_cdf(filelist, only_averages, contamination_threshold)
@@ -962,7 +963,7 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
     return datadf, energies_dict
 
 
-def _read_new_step_cdf(files, only_averages=False, contamination_threshold=False):
+def _read_new_step_cdf(files, only_averages=False, contamination_threshold=2):
     """
     Function that reads in new format (since Oct 2021) STEP CDF 'files'.
     EPOCH_X dependent data is obtained as Pandas Dataframe via sunpy.
