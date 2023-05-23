@@ -58,21 +58,23 @@ containing information on the energy channels.
 
    from solo_epd_loader import epd_load
 
-   df_1, df_2, energies = \
-       epd_load(sensor, level, startdate, enddate=None, viewing=None, path=None, autodownload=False)
+   df_1, df_2, energies = epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=None, 
+                                   autodownload=False, only_averages=False, contamination_threshold=2)
 
 Input
 ~~~~~
 
 -  ``sensor``: ``'ept'``, ``'het'``, or ``'step'`` (string)
--  ``level``: ``'ll'`` or ``'l2'`` (string)
 -  ``startdate``, ``enddate``: Datetime object (e.g., ``dt.date(2021,12,31)`` or ``dt.datetime(2021,4,15)``) or integer of the form yyyymmdd with empty positions filled with zeros, e.g. ``20210415`` (if no ``enddate`` is provided, ``enddate = startdate`` will be used)
+-  ``level``: ``'l2'`` or ``'ll'`` (string); defines level of data product: level 2 (``'l2'``) or low-latency (``'ll'``). By default ``'l2'``.
 -  ``viewing``: ``'sun'``, ``'asun'``, ``'north'``, ``'south'`` (string) or ``None``; not
    needed for ``sensor = 'step'``
 -  ``path``: directory in which Solar Orbiter data is/should be
    organized; e.g. ``'/home/userxyz/solo/data/'`` (string). See `Data folder structure`_ for more details.
--  ``autodownload``: if ``True`` will try to download missing data files
+-  ``autodownload``: if ``True``, will try to download missing data files
    from SOAR (bolean)
+- ``only_averages``: If ``True``, will for STEP only return the averaged fluxes, and not the data of each of the 15 Pixels. This will reduce the memory consumption. By default ``False``.
+- ``contamination_threshold``: If integer, mask electron data that probably is contaminated (i.e., set it to ``nan``) using an integer contamination threshold following the equation ``Integral_Flux - Magnet_Flux > contamination_threshold * Integral_Uncertainty``. If ``False``, don't alter the data at all. Only implemented for new STEP data (after Oct 2021) so far. By default ``2``.
 
 Return
 ~~~~~~
