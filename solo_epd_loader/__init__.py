@@ -12,6 +12,7 @@ import glob
 import itertools
 import os
 import re
+import sunpy
 import urllib.request
 import warnings
 from pathlib import Path
@@ -20,7 +21,10 @@ import cdflib
 import numpy as np
 import pandas as pd
 from astropy.io.votable import parse_single_table
-from sunpy.io.cdf import read_cdf
+if int(sunpy.__version__[0]) == 4:
+    from sunpy.io.cdf import read_cdf
+elif int(sunpy.__version__[0]) >= 5:
+    from sunpy.io._cdf import read_cdf
 from sunpy.timeseries import TimeSeries
 
 # omit Pandas' PerformanceWarning
