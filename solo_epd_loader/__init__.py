@@ -988,7 +988,7 @@ def _read_new_step_cdf(files, only_averages=False, contamination_threshold=2):
     meta['df_rtn_desc'] = cdf.varattsget('RTN')['CATDESC']
     # TODO: add to meta: 'Sector_Bins_Text', 'Sector_Bins_Low_Energy', 'Sector_Bins_Width' -- don't exist in new data product?
 
-    del(cdf)
+    del cdf
 
     # use sunpy to get Pandas DataFrame of EPOCH_X-dependent variables
     # data = TimeSeries(files, concatenate=True)
@@ -1014,7 +1014,7 @@ def _read_new_step_cdf(files, only_averages=False, contamination_threshold=2):
                 tdf.drop(columns=tdf.filter(like=col).columns, inplace=True)
         # print('merge dataframes...')
         df = pd.concat([df, tdf])
-        del(data, tdf)
+        del (data, tdf)
 
     # move RTN and HCI to different df's because they have different time indices
     # print('move RTN')
@@ -1024,9 +1024,9 @@ def _read_new_step_cdf(files, only_averages=False, contamination_threshold=2):
     df_hci = df[['HCI_Lat', 'HCI_Lon', 'HCI_R']].dropna(how='all')
     df = df.drop(columns=['HCI_Lat', 'HCI_Lon', 'HCI_R']).dropna(how='all')  # remove lines only containing NaN's (all)
     meta['df_rtn'] = df_rtn
-    del(df_rtn)
+    del df_rtn
     meta['df_hci'] = df_hci
-    del(df_hci)
+    del df_hci
 
     """
     # what to do with this? not read in by sunpy because of multi-dimensionality. skip for now
@@ -1035,30 +1035,26 @@ def _read_new_step_cdf(files, only_averages=False, contamination_threshold=2):
     """
     meta['RTN_Pixels'] = 'CDF var RTN_Pixels (Particle flow direction (unit vector) in RTN coordinates for each pixel) left out as of now because it is multidimensional'
 
+    # create list of electron fluxes to be calculated: only average or average + all individual pixels:
+    if only_averages:
+        pix_list = ['Avg']
+    else:
+        pix_list = ['Avg']+[str(n).rjust(2, '0') for n in range(1, 16)]
+
     # calculate electron fluxes from Magnet and Integral Fluxes using correction factors
     for i in range(len(Electron_Flux_Mult['Electron_Avg_Flux_Mult'])):  # 32 energy channels
-        df[f'Electron_Avg_Flux_{i}'] = Electron_Flux_Mult['Electron_Avg_Flux_Mult'][i] * (df[f'Integral_Avg_Flux_{i}'] - df[f'Magnet_Avg_Flux_{i}'])
-        df[f'Electron_Avg_Uncertainty_{i}'] = \
-            Electron_Flux_Mult['Electron_Avg_Flux_Mult'][i] * np.sqrt(df[f'Integral_Avg_Uncertainty_{i}']**2 + df[f'Magnet_Avg_Uncertainty_{i}']**2)
-        if type(contamination_threshold) == int:
-            clean = (df[f'Integral_Avg_Flux_{i}'] - df[f'Magnet_Avg_Flux_{i}']) > contamination_threshold*df[f'Integral_Avg_Uncertainty_{i}']
-            # mask non-clean data
-            df[f'Electron_Avg_Flux_{i}'] = df[f'Electron_Avg_Flux_{i}'].mask(~clean)
-            df[f'Electron_Avg_Uncertainty_{i}'] = df[f'Electron_Avg_Uncertainty_{i}'].mask(~clean)
+        for pix in pix_list:  # Avg, pixel 01 - 15 (00 is background pixel)
+            # print(f'Electron_{pix}_Flux_{i}', f"Electron_Flux_Mult['Electron_{pix}_Flux_Mult'][i]", f'Integral_{pix}_Flux_{i}', f'Magnet_{pix}_Flux_{i}')
+            df[f'Electron_{pix}_Flux_{i}'] = Electron_Flux_Mult[f'Electron_{pix}_Flux_Mult'][i] * (df[f'Integral_{pix}_Flux_{i}'] - df[f'Magnet_{pix}_Flux_{i}'])
 
-        if not only_averages:
-            for pix in [str(n).rjust(2, '0') for n in range(1, 16)]:  # pixel 01 - 15 (00 is background pixel)
-                # print(f'Electron_{pix}_Flux_{i}', f"Electron_Flux_Mult['Electron_{pix}_Flux_Mult'][i]", f'Integral_{pix}_Flux_{i}', f'Magnet_{pix}_Flux_{i}')
-                df[f'Electron_{pix}_Flux_{i}'] = Electron_Flux_Mult[f'Electron_{pix}_Flux_Mult'][i] * (df[f'Integral_{pix}_Flux_{i}'] - df[f'Magnet_{pix}_Flux_{i}'])
+            df[f'Electron_{pix}_Uncertainty_{i}'] = \
+                Electron_Flux_Mult[f'Electron_{pix}_Flux_Mult'][i] * np.sqrt(df[f'Integral_{pix}_Uncertainty_{i}']**2 + df[f'Magnet_{pix}_Uncertainty_{i}']**2)
 
-                df[f'Electron_{pix}_Uncertainty_{i}'] = \
-                    Electron_Flux_Mult[f'Electron_{pix}_Flux_Mult'][i] * np.sqrt(df[f'Integral_{pix}_Uncertainty_{i}']**2 + df[f'Magnet_{pix}_Uncertainty_{i}']**2)
-
-                if type(contamination_threshold) == int:
-                    clean = (df[f'Integral_{pix}_Flux_{i}'] - df[f'Magnet_{pix}_Flux_{i}']) > contamination_threshold*df[f'Integral_{pix}_Uncertainty_{i}']
-                    # mask non-clean data
-                    df[f'Electron_{pix}_Flux_{i}'] = df[f'Electron_{pix}_Flux_{i}'].mask(~clean)
-                    df[f'Electron_{pix}_Uncertainty_{i}'] = df[f'Electron_{pix}_Uncertainty_{i}'].mask(~clean)
+            if type(contamination_threshold) == int:
+                clean = (df[f'Integral_{pix}_Flux_{i}'] - df[f'Magnet_{pix}_Flux_{i}']) > contamination_threshold*df[f'Integral_{pix}_Uncertainty_{i}']
+                # mask non-clean data
+                df[f'Electron_{pix}_Flux_{i}'] = df[f'Electron_{pix}_Flux_{i}'].mask(~clean)
+                df[f'Electron_{pix}_Uncertainty_{i}'] = df[f'Electron_{pix}_Uncertainty_{i}'].mask(~clean)
 
     # TODO: replace all negative values in dataframe with np.nan (applies for electron fluxes that get negative in their calculation)
     # ==> not needed any more after masking above?
