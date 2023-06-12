@@ -976,14 +976,16 @@ def _read_new_step_cdf(files, only_averages=False, contamination_threshold=2):
     # read electron correction factors and meta data via cdflib
     cdf = cdflib.CDF(files[0])
     Electron_Flux_Mult = {'Electron_Avg_Flux_Mult': cdf['Electron_Avg_Flux_Mult']}
-    if not only_averages:
-        for i in range(1, 16):
-            Electron_Flux_Mult['Electron_'+str(i).rjust(2, '0')+'_Flux_Mult'] = cdf['Electron_'+str(i).rjust(2, '0')+'_Flux_Mult']
-        # df_Electron_Flux_Mult = pd.DataFrame(Electron_Flux_Mult)  # get dataframe from dict - not needed atm.
+    # if not only_averages:
+    for i in range(1, 16):
+        Electron_Flux_Mult['Electron_'+str(i).rjust(2, '0')+'_Flux_Mult'] = cdf['Electron_'+str(i).rjust(2, '0')+'_Flux_Mult']
+    # df_Electron_Flux_Mult = pd.DataFrame(Electron_Flux_Mult)  # get dataframe from dict - not needed atm.
 
     meta = {'Bins_Low_Energy': cdf['Bins_Low_Energy']}
     for i in ['Bins_Width', 'Bins_Text', 'Electron_Bins_Low_Energy', 'Electron_Bins_Width', 'Electron_Bins_Text', 'XYZ', 'XYZ_Pixels', 'XYZ_Labels', 'RTN_Labels']:
         meta[i] = cdf[i]
+
+    meta['Electron_Flux_Mult'] = Electron_Flux_Mult
 
     meta['df_rtn_desc'] = cdf.varattsget('RTN')['CATDESC']
     # TODO: add to meta: 'Sector_Bins_Text', 'Sector_Bins_Low_Energy', 'Sector_Bins_Width' -- don't exist in new data product?
@@ -1035,11 +1037,57 @@ def _read_new_step_cdf(files, only_averages=False, contamination_threshold=2):
     """
     meta['RTN_Pixels'] = 'CDF var RTN_Pixels (Particle flow direction (unit vector) in RTN coordinates for each pixel) left out as of now because it is multidimensional'
 
+    # # create list of electron fluxes to be calculated: only average or average + all individual pixels:
+    # if only_averages:
+    #     pix_list = ['Avg']
+    # else:
+    #     pix_list = ['Avg']+[str(n).rjust(2, '0') for n in range(1, 16)]
+
+    # # calculate electron fluxes from Magnet and Integral Fluxes using correction factors
+    # for i in range(len(Electron_Flux_Mult['Electron_Avg_Flux_Mult'])):  # 32 energy channels
+    #     for pix in pix_list:  # Avg, pixel 01 - 15 (00 is background pixel)
+    #         # print(f'Electron_{pix}_Flux_{i}', f"Electron_Flux_Mult['Electron_{pix}_Flux_Mult'][i]", f'Integral_{pix}_Flux_{i}', f'Magnet_{pix}_Flux_{i}')
+    #         df[f'Electron_{pix}_Flux_{i}'] = Electron_Flux_Mult[f'Electron_{pix}_Flux_Mult'][i] * (df[f'Integral_{pix}_Flux_{i}'] - df[f'Magnet_{pix}_Flux_{i}'])
+
+    #         df[f'Electron_{pix}_Uncertainty_{i}'] = \
+    #             Electron_Flux_Mult[f'Electron_{pix}_Flux_Mult'][i] * np.sqrt(df[f'Integral_{pix}_Uncertainty_{i}']**2 + df[f'Magnet_{pix}_Uncertainty_{i}']**2)
+
+    #         if type(contamination_threshold) == int:
+    #             clean = (df[f'Integral_{pix}_Flux_{i}'] - df[f'Magnet_{pix}_Flux_{i}']) > contamination_threshold*df[f'Integral_{pix}_Uncertainty_{i}']
+    #             # mask non-clean data
+    #             df[f'Electron_{pix}_Flux_{i}'] = df[f'Electron_{pix}_Flux_{i}'].mask(~clean)
+    #             df[f'Electron_{pix}_Uncertainty_{i}'] = df[f'Electron_{pix}_Uncertainty_{i}'].mask(~clean)
+    df = calc_electrons(df, meta, contamination_threshold=contamination_threshold, only_averages=only_averages, inplace=True, resample=False)
+
+    # TODO: replace all negative values in dataframe with np.nan (applies for electron fluxes that get negative in their calculation)
+    # ==> not needed any more after masking above?
+    # df = df.mask(df <= 0)
+
+    # TODO: multi-index (or rather multi-column) dataframe like previous product?
+
+    # df3['QUALITY_FLAG'] = df['QUALITY_FLAG']
+    # df3['QUALITY_BITMASK'] = df['QUALITY_BITMASK']
+    # df3['SMALL_PIXELS_FLAG'] = df['SMALL_PIXELS_FLAG']
+
+    return df, meta
+
+
+def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, inplace=True, resample=False):
+    # if inplace=True, the input Dataframe will be replaced with the new one,
+    # while inplace=False creates a copy, which will use much more time and memory
+    if not inplace:
+        df = df.copy()
+
     # create list of electron fluxes to be calculated: only average or average + all individual pixels:
     if only_averages:
         pix_list = ['Avg']
     else:
         pix_list = ['Avg']+[str(n).rjust(2, '0') for n in range(1, 16)]
+
+    Electron_Flux_Mult = meta['Electron_Flux_Mult']
+
+    if resample:
+        print('Do resampling here!')
 
     # calculate electron fluxes from Magnet and Integral Fluxes using correction factors
     for i in range(len(Electron_Flux_Mult['Electron_Avg_Flux_Mult'])):  # 32 energy channels
@@ -1055,15 +1103,4 @@ def _read_new_step_cdf(files, only_averages=False, contamination_threshold=2):
                 # mask non-clean data
                 df[f'Electron_{pix}_Flux_{i}'] = df[f'Electron_{pix}_Flux_{i}'].mask(~clean)
                 df[f'Electron_{pix}_Uncertainty_{i}'] = df[f'Electron_{pix}_Uncertainty_{i}'].mask(~clean)
-
-    # TODO: replace all negative values in dataframe with np.nan (applies for electron fluxes that get negative in their calculation)
-    # ==> not needed any more after masking above?
-    # df = df.mask(df <= 0)
-
-    # TODO: multi-index (or rather multi-column) dataframe like previous product?
-
-    # df3['QUALITY_FLAG'] = df['QUALITY_FLAG']
-    # df3['QUALITY_BITMASK'] = df['QUALITY_BITMASK']
-    # df3['SMALL_PIXELS_FLAG'] = df['SMALL_PIXELS_FLAG']
-
-    return df, meta
+    return df
