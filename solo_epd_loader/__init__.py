@@ -1088,6 +1088,7 @@ def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, inp
 
     if resample:
         print('Do resampling here!')
+        df = resample_df(df=df, resample=resample)
 
     # calculate electron fluxes from Magnet and Integral Fluxes using correction factors
     for i in range(len(Electron_Flux_Mult['Electron_Avg_Flux_Mult'])):  # 32 energy channels
@@ -1103,4 +1104,38 @@ def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, inp
                 # mask non-clean data
                 df[f'Electron_{pix}_Flux_{i}'] = df[f'Electron_{pix}_Flux_{i}'].mask(~clean)
                 df[f'Electron_{pix}_Uncertainty_{i}'] = df[f'Electron_{pix}_Uncertainty_{i}'].mask(~clean)
+    return df
+
+
+def resample_df(df, resample, pos_timestamp="center", origin="start"):
+    """
+    Resamples a Pandas Dataframe or Series to a new frequency.
+
+    Parameters:
+    -----------
+    df : pd.DataFrame or pd.Series
+            The dataframe or series to resample
+    resample : str
+            pandas-compatible time string, e.g., '1min', '2H' or '25s'
+    pos_timestamp : str, default 'center'
+            Controls if the timestamp is at the center of the time bin, or at the start of it
+    origin : str, default 'start'
+            Controls if the origin of resampling is at the start of the day (midnight) or at the first
+            entry of the input dataframe/series
+
+    Returns:
+    ----------
+    df : pd.DataFrame or Series, depending on the input
+    """
+    try:
+        df = df.resample(resample, origin=origin, label="left").mean()
+        if pos_timestamp == 'start':
+            df.index = df.index
+        else:
+            df.index = df.index + pd.tseries.frequencies.to_offset(pd.Timedelta(resample)/2)
+        # if pos_timestamp == 'stop' or pos_timestamp == 'end':
+        #     df.index = df.index + pd.tseries.frequencies.to_offset(pd.Timedelta(resample))
+    except ValueError:
+        raise ValueError(f"Your 'resample' option of [{resample}] doesn't seem to be a proper Pandas frequency!")
+
     return df
