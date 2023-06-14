@@ -1003,8 +1003,8 @@ def _read_new_step_cdf(files, only_averages=False, contamination_threshold=2):
         data = TimeSeries(f, concatenate=True)
         # print('convert to temporary dataframe (tdf)...')
         tdf = data.to_dataframe()
-        # drop 'Rate's from tdf
-        all_columns = False
+        # drop 'Rate's from tdf TODO: deactivate for now! 14 June 2023
+        all_columns = True
         if not all_columns:
             # print('dropping Rates from tdf')
             tdf.drop(columns=tdf.filter(like='Rate').columns, inplace=True)
@@ -1072,11 +1072,8 @@ def _read_new_step_cdf(files, only_averages=False, contamination_threshold=2):
     return df, meta
 
 
-def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, inplace=True, resample=False):
-    # if inplace=True, the input Dataframe will be replaced with the new one,
-    # while inplace=False creates a copy, which will use much more time and memory
-    if not inplace:
-        df = df.copy()
+def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, resample=False):
+    df = df.copy()
 
     # create list of electron fluxes to be calculated: only average or average + all individual pixels:
     if only_averages:
@@ -1087,7 +1084,6 @@ def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, inp
     Electron_Flux_Mult = meta['Electron_Flux_Mult']
 
     if resample:
-        print('Do resampling here!')
         df = resample_df(df=df, resample=resample)
 
     # calculate electron fluxes from Magnet and Integral Fluxes using correction factors
