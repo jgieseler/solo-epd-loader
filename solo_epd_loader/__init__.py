@@ -1003,7 +1003,7 @@ def _read_new_step_cdf(files, only_averages=False, contamination_threshold=2):
         data = TimeSeries(f, concatenate=True)
         # print('convert to temporary dataframe (tdf)...')
         tdf = data.to_dataframe()
-        # drop 'Rate's from tdf TODO: deactivate for now! 14 June 2023
+        # drop 'Rate's from tdf TODO: deactivate for now! 14 June 2023. moved to end of calc_electrons()
         all_columns = True
         if not all_columns:
             # print('dropping Rates from tdf')
@@ -1115,39 +1115,6 @@ def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, res
         # move timestamp to the center of each interval
         df.index = df.index + pd.tseries.frequencies.to_offset(pd.Timedelta(resample)/2)
 
-        """
-        TODO:
-        - make a temporary dataframe df_org?
-        - df.resample will change all data to the new resampled index (using mean), but
-          for counts and epoch, we need the original df to do the resampling with sum.
-        - BATTLE PLAN:
-            1. calculate the "sum-resampled" variables into a tdf
-            2. do the mean-resampling on df
-            3. concatenate tdf and df into one dataframe
-
-
-        tdf = pd.DataFrame()
-        tdf['DELTA_EPOCH_SUM'] = df['DELTA_EPOCH'].resample(resample, origin='start', label="left").sum()
-
-
-        TODO:
-        .sum() above shows the same numbers as .mean()?!?!?
-
-
-
-        for i in range(len(Electron_Flux_Mult['Electron_Avg_Flux_Mult'])):  # 32 energy channels
-            for pix in pix_list:  # Avg, pixel 01 - 15 (00 is background pixel)
-
-                # Integral_Avg_Counts_x does not exist! There are only Fluxes for Avg.
-
-                tdf[f'Integral_{pix}_Counts_{i}_SUM'] = df[f'Integral_{pix}_Counts_{i}'].resample(resample, origin='start', label="left").sum()
-
-        RENAME COLUMNS IN tdf before concatenating!
-
-        df = df.resample(resample, origin='start', label="left").mean()
-        # df = resample_df(df=df, resample=resample, pos_timestamp='start')
-        """
-
     # create list of electron fluxes to be calculated: only average or average + all individual pixels:
     if only_averages:
         pix_list = ['Avg']
@@ -1171,7 +1138,12 @@ def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, res
                 # mask non-clean data
                 df[f'Electron_{pix}_Flux_{i}'] = df[f'Electron_{pix}_Flux_{i}'].mask(~clean)
                 df[f'Electron_{pix}_Uncertainty_{i}'] = df[f'Electron_{pix}_Uncertainty_{i}'].mask(~clean)
-    # TODO: remove columns from df, especially for only_averages=True
+
+    # drop columns Rate and Counts from final df
+    all_columns = False
+    if not all_columns:
+        df.drop(columns=df.filter(like='Rate').columns, inplace=True)
+        df.drop(columns=df.filter(like='Counts').columns, inplace=True)
     return df
 
 
@@ -1187,7 +1159,7 @@ def calc_electrons_old(df, meta, contamination_threshold=2, only_averages=False,
     Electron_Flux_Mult = meta['Electron_Flux_Mult']
 
     if resample:
-        df = resample_df(df=df, resample=resample)
+        df = resample_df_old(df=df, resample=resample)
 
     # calculate electron fluxes from Magnet and Integral Fluxes using correction factors
     for i in range(len(Electron_Flux_Mult['Electron_Avg_Flux_Mult'])):  # 32 energy channels
@@ -1206,7 +1178,7 @@ def calc_electrons_old(df, meta, contamination_threshold=2, only_averages=False,
     return df
 
 
-def resample_df(df, resample, pos_timestamp="center", origin="start"):
+def resample_df_old(df, resample, pos_timestamp="center", origin="start"):
     """
     Resamples a Pandas Dataframe or Series to a new frequency.
 
