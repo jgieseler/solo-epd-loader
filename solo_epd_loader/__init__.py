@@ -1057,7 +1057,9 @@ def _read_new_step_cdf(files, only_averages=False, contamination_threshold=2):
     #             # mask non-clean data
     #             df[f'Electron_{pix}_Flux_{i}'] = df[f'Electron_{pix}_Flux_{i}'].mask(~clean)
     #             df[f'Electron_{pix}_Uncertainty_{i}'] = df[f'Electron_{pix}_Uncertainty_{i}'].mask(~clean)
+    """
     df = calc_electrons(df, meta, contamination_threshold=contamination_threshold, only_averages=only_averages, resample=False)
+    """
 
     # TODO: replace all negative values in dataframe with np.nan (applies for electron fluxes that get negative in their calculation)
     # ==> not needed any more after masking above?
