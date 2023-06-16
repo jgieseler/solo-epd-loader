@@ -1005,6 +1005,7 @@ def _read_new_step_cdf(files, only_averages=False, contamination_threshold=2):
         tdf = data.to_dataframe()
         # drop 'Rate's from tdf TODO: deactivate for now! 14 June 2023. moved to end of calc_electrons()
         all_columns = True
+        print('TODO: Drop Rates from df')
         if not all_columns:
             # print('dropping Rates from tdf')
             tdf.drop(columns=tdf.filter(like='Rate').columns, inplace=True)
@@ -1079,6 +1080,102 @@ def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, res
 
     Electron_Flux_Mult = meta['Electron_Flux_Mult']
 
+    # for i in range(len(Electron_Flux_Mult['Electron_Avg_Flux_Mult'])):  # 32 energy channels
+    #     # calculate Integral_xx_Counts_i (to be used with contamination threshold later)
+    #     for pix in [str(n).rjust(2, '0') for n in range(1, 16)]:  # pixel 01 - 15 (00 is background pixel)
+    #         df[f'Integral_{pix}_Counts_{i}'] = df[f'Integral_{pix}_Rate_{i}'] * df['DELTA_EPOCH']
+    #         df[f'Magnet_{pix}_Counts_{i}'] = df[f'Magnet_{pix}_Rate_{i}'] * df['DELTA_EPOCH']
+
+    #     # calculate Integral_Avg_Counts_i from sum of Integral_xx_Counts_i
+    #     df[f'Integral_Avg_Counts_{i}'] = df.filter(like='Integral_').filter(like=f'_Counts_{i}').sum(axis=1)
+    #     df[f'Magnet_Avg_Counts_{i}'] = df.filter(like='Magnet_').filter(like=f'_Counts_{i}').sum(axis=1)
+
+    #     # calculate Integral_Avg_Rate_i from Integral_Avg_Counts_i and integration time
+    #     df[f'Integral_Avg_Rate_{i}'] = df[f'Integral_Avg_Counts_{i}'] / df['DELTA_EPOCH']
+    #     df[f'Magnet_Avg_Rate_{i}'] = df[f'Magnet_Avg_Counts_{i}'] / df['DELTA_EPOCH']
+
+    if resample:
+        # 1st for each measurement i:
+        # delta_flux_temp = delta_flux^2 * dt^2
+        # delta_flux = delta_flux_temp
+
+        # for all Integral and Magnet Uncertainties:
+        col_uncertainties = df.filter(like=f'_Uncertainty_').columns.tolist()
+        for delta_flux in col_uncertainties:
+            # df[f'{delta_flux}_temp'] = df[delta_flux]**2 * df['DELTA_EPOCH']**2
+            df[delta_flux] = df[delta_flux]**2 * df['DELTA_EPOCH']**2
+
+        # resample, using sum for delta_flux_temp and dt
+        """
+        delta_flux_resampled = np.sqrt( sum(delta_flux_i^2 * dt_i^2) / (sum(dt_i))^2 )
+        delta_flux_resampled = np.sqrt( sum(delta_flux_temp_i) / (sum(dt_i))^2 )
+        delta_flux_resampled = np.sqrt( delta_flux_temp / dt^2 )    # delta_flux_temp and dt are resampled sums here!
+            # only_averages
+        # Remove Counts
+        """
+
+        # select columns that should be summed in the resampling process (instead of calculating the mean)
+        # col_sum = df.filter(like=f'_temp').columns.tolist()
+        col_sum = col_uncertainties.copy()
+        col_sum.insert(0, 'DELTA_EPOCH')  # same as append, but puts it to the start of the list (not really necessary)
+
+        # select columns for which the mean should be calculated in the resampling process.
+        # do this by removing "to be summed" columns from the list of all columns.
+        col_mean = df.columns.drop(col_sum).tolist()
+
+        # build dictionary for agg function that defines how columns should be aggregated
+        dict_agg = {}
+        for c in col_sum:
+            dict_agg[c] = 'sum'
+        for c in col_mean:
+            dict_agg[c] = 'mean'
+
+        # resample with the timestamps at the beginning of the interval (like in original data!)
+        df = df.resample(resample, origin='start', label="left").agg(dict_agg)
+
+        # move timestamp to the center of each interval
+        df.index = df.index + pd.tseries.frequencies.to_offset(pd.Timedelta(resample)/2)
+
+        # calculate correctly resampled Uncertainties:
+        for delta_flux in col_uncertainties:
+            # delta_flux_resampled = np.sqrt( delta_flux_temp / dt^2 )  # delta_flux_temp and dt are resampled sums here!
+            df[delta_flux] = np.sqrt(df[delta_flux] / df['DELTA_EPOCH']**2)
+
+    # create list of electron fluxes to be calculated: only average or average + all individual pixels:
+    if only_averages:
+        pix_list = ['Avg']
+    else:
+        pix_list = ['Avg']+[str(n).rjust(2, '0') for n in range(1, 16)]
+
+    # calculate electron fluxes from Magnet and Integral Fluxes using correction factors
+    for i in range(len(Electron_Flux_Mult['Electron_Avg_Flux_Mult'])):  # 32 energy channels
+        for pix in pix_list:  # Avg, pixel 01 - 15 (00 is background pixel)
+            # print(f'Electron_{pix}_Flux_{i}', f"Electron_Flux_Mult['Electron_{pix}_Flux_Mult'][i]", f'Integral_{pix}_Flux_{i}', f'Magnet_{pix}_Flux_{i}')
+            df[f'Electron_{pix}_Flux_{i}'] = Electron_Flux_Mult[f'Electron_{pix}_Flux_Mult'][i] * (df[f'Integral_{pix}_Flux_{i}'] - df[f'Magnet_{pix}_Flux_{i}'])
+
+            df[f'Electron_{pix}_Uncertainty_{i}'] = \
+                Electron_Flux_Mult[f'Electron_{pix}_Flux_Mult'][i] * np.sqrt(df[f'Integral_{pix}_Uncertainty_{i}']**2 + df[f'Magnet_{pix}_Uncertainty_{i}']**2)
+
+            if type(contamination_threshold) == int:
+                clean = (df[f'Integral_{pix}_Flux_{i}'] - df[f'Magnet_{pix}_Flux_{i}']) > contamination_threshold*df[f'Integral_{pix}_Uncertainty_{i}']
+                # clean = (df[f'Integral_{pix}_Rate_{i}'] - df[f'Magnet_{pix}_Rate_{i}']) > contamination_threshold*np.sqrt(df[f'Integral_{pix}_Rate_{i}'])/np.sqrt(df['DELTA_EPOCH'])
+                # clean = (df[f'Integral_{pix}_Rate_{i}'] - df[f'Magnet_{pix}_Rate_{i}']) > contamination_threshold*np.sqrt(df[f'Integral_{pix}_Counts_{i}'])/df['DELTA_EPOCH']
+
+                # mask non-clean data
+                df[f'Electron_{pix}_Flux_{i}'] = df[f'Electron_{pix}_Flux_{i}'].mask(~clean)
+                df[f'Electron_{pix}_Uncertainty_{i}'] = df[f'Electron_{pix}_Uncertainty_{i}'].mask(~clean)
+
+    return df
+
+
+def calc_electrons_rates(df, meta, contamination_threshold=2, only_averages=False, resample=False):
+    """
+    Outdated version of calc_electrons() that used rates to calculate counts, which are then used to calculate resampled uncertainties
+    """
+    df = df.copy()
+
+    Electron_Flux_Mult = meta['Electron_Flux_Mult']
+
     for i in range(len(Electron_Flux_Mult['Electron_Avg_Flux_Mult'])):  # 32 energy channels
         # calculate Integral_xx_Counts_i (to be used with contamination threshold later)
         for pix in [str(n).rjust(2, '0') for n in range(1, 16)]:  # pixel 01 - 15 (00 is background pixel)
@@ -1148,6 +1245,9 @@ def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, res
 
 
 def calc_electrons_old(df, meta, contamination_threshold=2, only_averages=False, resample=False):
+    """
+    Outdated original functionality to derive Electron Fluxes. Mask too many data when using contamination threshold because the Integral_Uncertainties are not calculated correctly in the resampling.
+    """
     df = df.copy()
 
     # create list of electron fluxes to be calculated: only average or average + all individual pixels:
