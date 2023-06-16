@@ -1035,27 +1035,8 @@ def _read_new_step_cdf(files, only_averages=False, contamination_threshold=2):
     """
     meta['RTN_Pixels'] = 'CDF var RTN_Pixels (Particle flow direction (unit vector) in RTN coordinates for each pixel) left out as of now because it is multidimensional'
 
-    # # create list of electron fluxes to be calculated: only average or average + all individual pixels:
-    # if only_averages:
-    #     pix_list = ['Avg']
-    # else:
-    #     pix_list = ['Avg']+[str(n).rjust(2, '0') for n in range(1, 16)]
-
-    # # calculate electron fluxes from Magnet and Integral Fluxes using correction factors
-    # for i in range(len(Electron_Flux_Mult['Electron_Avg_Flux_Mult'])):  # 32 energy channels
-    #     for pix in pix_list:  # Avg, pixel 01 - 15 (00 is background pixel)
-    #         # print(f'Electron_{pix}_Flux_{i}', f"Electron_Flux_Mult['Electron_{pix}_Flux_Mult'][i]", f'Integral_{pix}_Flux_{i}', f'Magnet_{pix}_Flux_{i}')
-    #         df[f'Electron_{pix}_Flux_{i}'] = Electron_Flux_Mult[f'Electron_{pix}_Flux_Mult'][i] * (df[f'Integral_{pix}_Flux_{i}'] - df[f'Magnet_{pix}_Flux_{i}'])
-
-    #         df[f'Electron_{pix}_Uncertainty_{i}'] = \
-    #             Electron_Flux_Mult[f'Electron_{pix}_Flux_Mult'][i] * np.sqrt(df[f'Integral_{pix}_Uncertainty_{i}']**2 + df[f'Magnet_{pix}_Uncertainty_{i}']**2)
-
-    #         if type(contamination_threshold) == int:
-    #             clean = (df[f'Integral_{pix}_Flux_{i}'] - df[f'Magnet_{pix}_Flux_{i}']) > contamination_threshold*df[f'Integral_{pix}_Uncertainty_{i}']
-    #             # mask non-clean data
-    #             df[f'Electron_{pix}_Flux_{i}'] = df[f'Electron_{pix}_Flux_{i}'].mask(~clean)
-    #             df[f'Electron_{pix}_Uncertainty_{i}'] = df[f'Electron_{pix}_Uncertainty_{i}'].mask(~clean)
     """
+    Electron_Flux calculation moved to own function that includes correct resampling. For Now, it should be called independently.
     df = calc_electrons(df, meta, contamination_threshold=contamination_threshold, only_averages=only_averages, resample=False)
     """
 
