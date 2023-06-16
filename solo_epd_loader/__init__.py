@@ -1001,11 +1001,8 @@ def _read_new_step_cdf(files, only_averages=False, contamination_threshold=2):
     for f in files:
         print('Loading', f)
         data = TimeSeries(f, concatenate=True)
-        # print('convert to temporary dataframe (tdf)...')
         tdf = data.to_dataframe()
-        # drop 'Rate's from tdf TODO: deactivate for now! 14 June 2023. moved to end of calc_electrons()
-        all_columns = True
-        print('TODO: Drop Rates from df')
+        all_columns = False
         if not all_columns:
             # print('dropping Rates from tdf')
             tdf.drop(columns=tdf.filter(like='Rate').columns, inplace=True)
@@ -1080,42 +1077,14 @@ def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, res
 
     Electron_Flux_Mult = meta['Electron_Flux_Mult']
 
-    # for i in range(len(Electron_Flux_Mult['Electron_Avg_Flux_Mult'])):  # 32 energy channels
-    #     # calculate Integral_xx_Counts_i (to be used with contamination threshold later)
-    #     for pix in [str(n).rjust(2, '0') for n in range(1, 16)]:  # pixel 01 - 15 (00 is background pixel)
-    #         df[f'Integral_{pix}_Counts_{i}'] = df[f'Integral_{pix}_Rate_{i}'] * df['DELTA_EPOCH']
-    #         df[f'Magnet_{pix}_Counts_{i}'] = df[f'Magnet_{pix}_Rate_{i}'] * df['DELTA_EPOCH']
-
-    #     # calculate Integral_Avg_Counts_i from sum of Integral_xx_Counts_i
-    #     df[f'Integral_Avg_Counts_{i}'] = df.filter(like='Integral_').filter(like=f'_Counts_{i}').sum(axis=1)
-    #     df[f'Magnet_Avg_Counts_{i}'] = df.filter(like='Magnet_').filter(like=f'_Counts_{i}').sum(axis=1)
-
-    #     # calculate Integral_Avg_Rate_i from Integral_Avg_Counts_i and integration time
-    #     df[f'Integral_Avg_Rate_{i}'] = df[f'Integral_Avg_Counts_{i}'] / df['DELTA_EPOCH']
-    #     df[f'Magnet_Avg_Rate_{i}'] = df[f'Magnet_Avg_Counts_{i}'] / df['DELTA_EPOCH']
-
     if resample:
-        # 1st for each measurement i:
-        # delta_flux_temp = delta_flux^2 * dt^2
-        # delta_flux = delta_flux_temp
-
         # for all Integral and Magnet Uncertainties:
         col_uncertainties = df.filter(like=f'_Uncertainty_').columns.tolist()
         for delta_flux in col_uncertainties:
-            # df[f'{delta_flux}_temp'] = df[delta_flux]**2 * df['DELTA_EPOCH']**2
+            # overwrite x_Uncertainty with temp. variable x_Uncertainty**2 * dt**2 that is summed in the resampling
             df[delta_flux] = df[delta_flux]**2 * df['DELTA_EPOCH']**2
 
-        # resample, using sum for delta_flux_temp and dt
-        """
-        delta_flux_resampled = np.sqrt( sum(delta_flux_i^2 * dt_i^2) / (sum(dt_i))^2 )
-        delta_flux_resampled = np.sqrt( sum(delta_flux_temp_i) / (sum(dt_i))^2 )
-        delta_flux_resampled = np.sqrt( delta_flux_temp / dt^2 )    # delta_flux_temp and dt are resampled sums here!
-            # only_averages
-        # Remove Counts
-        """
-
         # select columns that should be summed in the resampling process (instead of calculating the mean)
-        # col_sum = df.filter(like=f'_temp').columns.tolist()
         col_sum = col_uncertainties.copy()
         col_sum.insert(0, 'DELTA_EPOCH')  # same as append, but puts it to the start of the list (not really necessary)
 
@@ -1150,9 +1119,7 @@ def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, res
     # calculate electron fluxes from Magnet and Integral Fluxes using correction factors
     for i in range(len(Electron_Flux_Mult['Electron_Avg_Flux_Mult'])):  # 32 energy channels
         for pix in pix_list:  # Avg, pixel 01 - 15 (00 is background pixel)
-            # print(f'Electron_{pix}_Flux_{i}', f"Electron_Flux_Mult['Electron_{pix}_Flux_Mult'][i]", f'Integral_{pix}_Flux_{i}', f'Magnet_{pix}_Flux_{i}')
             df[f'Electron_{pix}_Flux_{i}'] = Electron_Flux_Mult[f'Electron_{pix}_Flux_Mult'][i] * (df[f'Integral_{pix}_Flux_{i}'] - df[f'Magnet_{pix}_Flux_{i}'])
-
             df[f'Electron_{pix}_Uncertainty_{i}'] = \
                 Electron_Flux_Mult[f'Electron_{pix}_Flux_Mult'][i] * np.sqrt(df[f'Integral_{pix}_Uncertainty_{i}']**2 + df[f'Magnet_{pix}_Uncertainty_{i}']**2)
 
