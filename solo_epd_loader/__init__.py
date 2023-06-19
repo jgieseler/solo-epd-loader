@@ -1116,7 +1116,7 @@ def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, res
     return df
 
 
-def calc_electrons_rates(df, meta, contamination_threshold=2, only_averages=False, resample=False):
+def _calc_electrons_rates(df, meta, contamination_threshold=2, only_averages=False, resample=False):
     """
     Outdated version of calc_electrons() that used rates to calculate counts, which are then used to calculate resampled uncertainties
     """
@@ -1192,7 +1192,7 @@ def calc_electrons_rates(df, meta, contamination_threshold=2, only_averages=Fals
     return df
 
 
-def calc_electrons_old(df, meta, contamination_threshold=2, only_averages=False, resample=False):
+def _calc_electrons_old(df, meta, contamination_threshold=2, only_averages=False, resample=False):
     """
     Outdated original functionality to derive Electron Fluxes. Mask too many data when using contamination threshold because the Integral_Uncertainties are not calculated correctly in the resampling.
     """
@@ -1207,7 +1207,7 @@ def calc_electrons_old(df, meta, contamination_threshold=2, only_averages=False,
     Electron_Flux_Mult = meta['Electron_Flux_Mult']
 
     if resample:
-        df = resample_df_old(df=df, resample=resample)
+        df = _resample_df_old(df=df, resample=resample)
 
     # calculate electron fluxes from Magnet and Integral Fluxes using correction factors
     for i in range(len(Electron_Flux_Mult['Electron_Avg_Flux_Mult'])):  # 32 energy channels
@@ -1226,7 +1226,7 @@ def calc_electrons_old(df, meta, contamination_threshold=2, only_averages=False,
     return df
 
 
-def resample_df_old(df, resample, pos_timestamp="center", origin="start"):
+def _resample_df_old(df, resample, pos_timestamp="center", origin="start"):
     """
     Resamples a Pandas Dataframe or Series to a new frequency.
 
