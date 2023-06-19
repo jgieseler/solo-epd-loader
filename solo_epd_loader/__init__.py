@@ -484,6 +484,7 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
         of each of the 15 Pixels. This will reduce the memory consumption. By
         default False.
     contamination_threshold : int or False, optional
+        >> NOT IN USE AS OF VERSION 0.2.4 <<
         If int, mask electron data that probably is contaminated (i.e., set it
         to nan) using an integer contamination threshold following the equation:
         Integral_Flux - Magnet_Flux > contamination_threshold * Integral_Uncertainty
