@@ -59,7 +59,7 @@ containing information on the energy channels.
    from solo_epd_loader import epd_load
 
    df_1, df_2, energies = epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=None, 
-                                   autodownload=False, only_averages=False, contamination_threshold=2)
+                                   autodownload=False, only_averages=False)
 
 Input
 ~~~~~
@@ -74,7 +74,7 @@ Input
 -  ``autodownload``: if ``True``, will try to download missing data files
    from SOAR (bolean)
 - ``only_averages``: If ``True``, will for STEP only return the averaged fluxes, and not the data of each of the 15 Pixels. This will reduce the memory consumption. By default ``False``.
-- ``contamination_threshold``: If integer, mask electron data that probably is contaminated (i.e., set it to ``nan``) using an integer contamination threshold following the equation ``Integral_Flux - Magnet_Flux > contamination_threshold * Integral_Uncertainty``. If ``False``, don't alter the data at all. Only implemented for new STEP data (after Oct 2021) so far. By default ``2``.
+.. - ``contamination_threshold``: If integer, mask electron data that probably is contaminated (i.e., set it to ``nan``) using an integer contamination threshold following the equation ``Integral_Flux - Magnet_Flux > contamination_threshold * Integral_Uncertainty``. If ``False``, don't alter the data at all. Only implemented for new STEP data (after Oct 2021) so far. By default ``2``.
 
 Return
 ~~~~~~
@@ -106,11 +106,11 @@ SupraThermal Electron Proton (STEP) sensor electron measurements
 
 Please note that the STEP electron measurements are not directly provided in the publically released data, but need to be calculated from them. This process is not straightforward, and the resulting data is prone to uncertainties (like contamination). **Thus it should only be used scientifically with caution! Please refer to the** `official EPD data description <http://espada.uah.es/epd/EPD_data.php>`_ **before using the data!**
 
-The ``contamination_threshold`` option can be used when calling ``epd_load()`` to mask STEP electron data that probably is contaminated (i.e., it is set to nan) following the equation:
+.. The ``contamination_threshold`` option can be used when calling ``epd_load()`` to mask STEP electron data that probably is contaminated (i.e., it is set to nan) following the equation:
 
-   Integral_Flux - Magnet_Flux > contamination_threshold * Integral_Uncertainty
+..   Integral_Flux - Magnet_Flux > contamination_threshold * Integral_Uncertainty
 
-The default setting is ``contamination_threshold=2``.
+.. The default setting is ``contamination_threshold=2``.
 
 
 Data folder structure
