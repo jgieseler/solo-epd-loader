@@ -839,13 +839,6 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
             If True, will for STEP only return the averaged fluxes, and not the data
             of each of the 15 Pixels. This will reduce the memory consumption. By
             default False.
-        contamination_threshold : int or False, optional
-            >>> NOT IN USE HERE SINCE VERSION 0.2.4 <<<
-            If int, mask electron data that probably is contaminated (i.e., set it
-            to nan) using an integer contamination threshold following the equation:
-            Integral_Flux - Magnet_Flux > contamination_threshold * Integral_Uncertainty
-            If False, don't alter the data at all. Only implemented for new STEP
-            data (after Oct 2021) so far. By default 2.
     RETURNS:
         1. Pandas dataframe with fluxes and errors in
            'particles / (s cm^2 sr MeV)'
@@ -1059,6 +1052,36 @@ def _read_new_step_cdf(files, only_averages=False):
 
 
 def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, resample=False):
+    """
+    Calulate STEP electron data from Integral and Magnet observations.
+
+    Parameters
+    ----------
+    df : Pandas DataFrame
+        DataFrame containing the original STEP data read-in with epd_load
+        (containing Integral_Fluxes and Magnet_Fluxes).
+    meta : dict
+        Dictionary of meta data like energy information provided as second output
+        of epd_load.
+    contamination_threshold : int or False/None, optional
+        If int, mask electron data that probably is contaminated (i.e., set it
+        to nan) using an integer contamination threshold following the equation:
+        Integral_Flux - Magnet_Flux > contamination_threshold * Integral_Uncertainty
+        If False, don't alter the data at all. Only implemented for new STEP
+        data (after Oct 2021) so far. By default 2.
+    only_averages : bool, optional
+        If True, will for STEP only return the averaged fluxes, and not the data
+        of each of the 15 Pixels. This will reduce the memory consumption. By
+        default False.
+    resample : str
+        Pandas-readable resampling time, e.g. '1min'
+
+    Returns
+    -------
+    df : Pandas DataFrame
+        DataFrame sutrucuted as the input DataFrame, but with additional Electron columns
+        (Flux and Uncertainity) and possibly resampled.
+    """
     df = df.copy()
 
     Electron_Flux_Mult = meta['Electron_Flux_Mult']
