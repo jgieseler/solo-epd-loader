@@ -443,7 +443,7 @@ def _autodownload_cdf(startdate, enddate, sensor, level, path):
 
 
 def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=None,
-             autodownload=False, only_averages=False, contamination_threshold=2):
+             autodownload=False, only_averages=False):
     """
     Load SolO/EPD data
 
@@ -483,13 +483,6 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
         If True, will for STEP only return the averaged fluxes, and not the data
         of each of the 15 Pixels. This will reduce the memory consumption. By
         default False.
-    contamination_threshold : int or False, optional
-        >> NOT IN USE AS OF VERSION 0.2.4 <<
-        If int, mask electron data that probably is contaminated (i.e., set it
-        to nan) using an integer contamination threshold following the equation:
-        Integral_Flux - Magnet_Flux > contamination_threshold * Integral_Uncertainty
-        If False, don't alter the data at all. Only implemented for new STEP
-        data (after Oct 2021) so far. By default 2.
 
     Returns
     -------
@@ -832,7 +825,7 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None,
 
 
 def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False,
-                   only_averages=False, contamination_threshold=2):
+                   only_averages=False):
     """
     INPUT:
         level: 'll' or 'l2' (string)
@@ -842,6 +835,17 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
         path: directory in which Solar Orbiter data is/should be organized;
               e.g. '/home/userxyz/uni/solo/data/' (string)
         autodownload: if True will try to download missing data files from SOAR
+        only_averages : bool, optional
+            If True, will for STEP only return the averaged fluxes, and not the data
+            of each of the 15 Pixels. This will reduce the memory consumption. By
+            default False.
+        contamination_threshold : int or False, optional
+            >>> NOT IN USE HERE SINCE VERSION 0.2.4 <<<
+            If int, mask electron data that probably is contaminated (i.e., set it
+            to nan) using an integer contamination threshold following the equation:
+            Integral_Flux - Magnet_Flux > contamination_threshold * Integral_Uncertainty
+            If False, don't alter the data at all. Only implemented for new STEP
+            data (after Oct 2021) so far. By default 2.
     RETURNS:
         1. Pandas dataframe with fluxes and errors in
            'particles / (s cm^2 sr MeV)'
@@ -954,8 +958,8 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
 
             datadf.index.names = ['Time']
 
-            if type(contamination_threshold) == int:
-                print("'contamination_threshold' not yet included for old STEP data (before Oct 22, 2021)!")
+            # if type(contamination_threshold) == int:
+            #     print("'contamination_threshold' not yet included for old STEP data (before Oct 22, 2021)!")
 
         elif product == 'main':
             datadf, energies_dict = _read_new_step_cdf(filelist, only_averages, contamination_threshold)
@@ -968,7 +972,7 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
     return datadf, energies_dict
 
 
-def _read_new_step_cdf(files, only_averages=False, contamination_threshold=2):
+def _read_new_step_cdf(files, only_averages=False):
     """
     Function that reads in new format (since Oct 2021) STEP CDF 'files'.
     EPOCH_X dependent data is obtained as Pandas Dataframe via sunpy.
@@ -1119,7 +1123,7 @@ def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, res
         print("contamination_threshold has been set to 0. Ignoring the contamination_threshold (i.e., NOT calculating it for 0)!")
 
     if type(contamination_threshold) != int:
-        print("conatmination_threshold will only be applied if it is an integer. Otherwise only negative fluxes are removed.")
+        print("Info: contamination_threshold will only be applied if it is an integer. Otherwise only negative fluxes are removed.")
 
     # remove negative fluxes (probably not needed for masked data, but for contamination_threshold=None)
     df = df.mask(df < 0)
