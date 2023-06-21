@@ -540,7 +540,7 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
 
     if sensor.lower() == 'step':
         datadf, energies_dict = \
-            _read_step_cdf(level, startdate, enddate, path, autodownload, only_averages, contamination_threshold)
+            _read_step_cdf(level, startdate, enddate, path, autodownload, only_averages)
         return datadf, energies_dict
     if sensor.lower() == 'ept' or sensor.lower() == 'het':
         if viewing is None:
@@ -955,7 +955,7 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
             #     print("'contamination_threshold' not yet included for old STEP data (before Oct 22, 2021)!")
 
         elif product == 'main':
-            datadf, energies_dict = _read_new_step_cdf(filelist, only_averages, contamination_threshold)
+            datadf, energies_dict = _read_new_step_cdf(filelist, only_averages)
 
     '''
     Careful if adding more species - they might have different EPOCH
