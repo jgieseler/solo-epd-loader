@@ -22,9 +22,9 @@ import numpy as np
 import pandas as pd
 from astropy.io.votable import parse_single_table
 if int(sunpy.__version__[0]) == 4:
-    from sunpy.io.cdf import read_cdf
+    from sunpy.io.cdf import read_cdf, _known_units
 elif int(sunpy.__version__[0]) >= 5:
-    from sunpy.io._cdf import read_cdf
+    from sunpy.io._cdf import read_cdf, _known_units
 from sunpy.timeseries import TimeSeries
 
 # omit Pandas' PerformanceWarning
@@ -38,7 +38,7 @@ two Pandas dataframes (one for protons & alphas, one for electrons). In general
 available are 'sun', 'asun', 'north', and 'south' viewing directions for 'ept'
 and 'het' telescopes of SolO/EPD.
 
-from epd_loader import *
+from solo_epd_loader import *
 
 df_protons, df_electrons, energies = \
 _read_epd_cdf('ept', 'north', 'll', 20210415, 20210416,
@@ -998,7 +998,36 @@ def _read_new_step_cdf(files, only_averages=False):
     df = pd.DataFrame()
     for f in files:
         print('Loading', f)
-        data = TimeSeries(f, concatenate=True)
+        # data = TimeSeries(f, concatenate=True)
+        ignore_vars = []
+        all_columns = False
+        if not all_columns:
+            ignore_vars = ['Integral_01_Rate', 'Integral_02_Rate', 'Integral_03_Rate', 'Integral_04_Rate', 'Integral_05_Rate', 'Integral_06_Rate',
+                           'Integral_07_Rate', 'Integral_08_Rate', 'Integral_09_Rate', 'Integral_10_Rate', 'Integral_11_Rate', 'Integral_12_Rate',
+                           'Integral_13_Rate', 'Integral_14_Rate', 'Integral_15_Rate', 'Magnet_01_Rate', 'Magnet_02_Rate', 'Magnet_03_Rate', 'Magnet_04_Rate',
+                           'Magnet_05_Rate', 'Magnet_06_Rate', 'Magnet_07_Rate', 'Magnet_08_Rate', 'Magnet_09_Rate', 'Magnet_10_Rate', 'Magnet_11_Rate',
+                           'Magnet_12_Rate', 'Magnet_13_Rate', 'Magnet_14_Rate', 'Magnet_15_Rate', 'Integral_00_Rate', 'Magnet_00_Rate']
+        if only_averages:
+            ignore_vars = ['Integral_01_Flux', 'Integral_01_Uncertainty', 'Integral_01_Rate', 'Integral_02_Flux', 'Integral_02_Uncertainty',
+                           'Integral_02_Rate', 'Integral_03_Flux', 'Integral_03_Uncertainty', 'Integral_03_Rate', 'Integral_04_Flux', 'Integral_04_Uncertainty',
+                           'Integral_04_Rate', 'Integral_05_Flux', 'Integral_05_Uncertainty', 'Integral_05_Rate', 'Integral_06_Flux', 'Integral_06_Uncertainty',
+                           'Integral_06_Rate', 'Integral_07_Flux', 'Integral_07_Uncertainty', 'Integral_07_Rate', 'Integral_08_Flux', 'Integral_08_Uncertainty',
+                           'Integral_08_Rate', 'Integral_09_Flux', 'Integral_09_Uncertainty', 'Integral_09_Rate', 'Integral_10_Flux', 'Integral_10_Uncertainty',
+                           'Integral_10_Rate', 'Integral_11_Flux', 'Integral_11_Uncertainty', 'Integral_11_Rate', 'Integral_12_Flux', 'Integral_12_Uncertainty',
+                           'Integral_12_Rate', 'Integral_13_Flux', 'Integral_13_Uncertainty', 'Integral_13_Rate', 'Integral_14_Flux', 'Integral_14_Uncertainty',
+                           'Integral_14_Rate', 'Integral_15_Flux', 'Integral_15_Uncertainty', 'Integral_15_Rate', 'Magnet_01_Flux', 'Magnet_01_Uncertainty',
+                           'Magnet_01_Rate', 'Magnet_02_Flux', 'Magnet_02_Uncertainty', 'Magnet_02_Rate', 'Magnet_03_Flux', 'Magnet_03_Uncertainty',
+                           'Magnet_03_Rate', 'Magnet_04_Flux', 'Magnet_04_Uncertainty', 'Magnet_04_Rate', 'Magnet_05_Flux', 'Magnet_05_Uncertainty',
+                           'Magnet_05_Rate', 'Magnet_06_Flux', 'Magnet_06_Uncertainty', 'Magnet_06_Rate', 'Magnet_07_Flux', 'Magnet_07_Uncertainty',
+                           'Magnet_07_Rate', 'Magnet_08_Flux', 'Magnet_08_Uncertainty', 'Magnet_08_Rate', 'Magnet_09_Flux', 'Magnet_09_Uncertainty',
+                           'Magnet_09_Rate', 'Magnet_10_Flux', 'Magnet_10_Uncertainty', 'Magnet_10_Rate', 'Magnet_11_Flux', 'Magnet_11_Uncertainty',
+                           'Magnet_11_Rate', 'Magnet_12_Flux', 'Magnet_12_Uncertainty', 'Magnet_12_Rate', 'Magnet_13_Flux', 'Magnet_13_Uncertainty',
+                           'Magnet_13_Rate', 'Magnet_14_Flux', 'Magnet_14_Uncertainty', 'Magnet_14_Rate', 'Magnet_15_Flux', 'Magnet_15_Uncertainty',
+                           'Magnet_15_Rate', 'Integral_00_Rate', 'Magnet_00_Rate']
+        tss = _read_cdf_mod(f, ignore_vars=ignore_vars)
+        data = tss.pop(0)
+        for ts in tss:
+            data = data.concatenate(ts)
         tdf = data.to_dataframe()
         all_columns = False
         if not all_columns:
@@ -1296,3 +1325,127 @@ def _resample_df_old(df, resample, pos_timestamp="center", origin="start"):
         raise ValueError(f"Your 'resample' option of [{resample}] doesn't seem to be a proper Pandas frequency!")
 
     return df
+
+
+"""
+Modification of sunpy's read_cdf function to allow skipping of reading variables from a cdf file.
+This function is copied from sunpy under the terms of the BSD 2-Clause licence. See licenses/SUNPY_LICENSE.rst
+"""
+
+
+def _read_cdf_mod(fname, ignore_vars=[]):
+    """
+    Read a CDF file that follows the ISTP/IACG guidelines.
+
+    Parameters
+    ----------
+    fname : path-like
+        Location of single CDF file to read.
+
+    Returns
+    -------
+    list[GenericTimeSeries]
+        A list of time series objects, one for each unique time index within
+        the CDF file.
+
+    References
+    ----------
+    Space Physics Guidelines for CDF https://spdf.gsfc.nasa.gov/sp_use_of_cdf.html
+    """
+    import astropy.units as u
+    from cdflib.epochs import CDFepoch
+    from packaging.version import Version
+    from sunpy import log
+    from sunpy.timeseries import GenericTimeSeries
+    from sunpy.util.exceptions import warn_user
+    cdf = cdflib.CDF(str(fname))
+    # Extract the time varying variables
+    cdf_info = cdf.cdf_info()
+    meta = cdf.globalattsget()
+    if hasattr(cdflib, "__version__") and Version(cdflib.__version__) >= Version("1.0.0"):
+        all_var_keys = cdf_info.rVariables + cdf_info.zVariables
+    else:
+        all_var_keys = cdf_info['rVariables'] + cdf_info['zVariables']
+    var_attrs = {key: cdf.varattsget(key) for key in all_var_keys}
+    # Get keys that depend on time
+    var_keys = [var for var in var_attrs if 'DEPEND_0' in var_attrs[var] and var_attrs[var]['DEPEND_0'] is not None]
+
+    # Get unique time index keys
+    time_index_keys = sorted(set([var_attrs[var]['DEPEND_0'] for var in var_keys]))
+
+    all_ts = []
+    # For each time index, construct a GenericTimeSeries
+    for index_key in time_index_keys:
+        try:
+            index = cdf.varget(index_key)
+        except ValueError:
+            # Empty index for cdflib >= 0.3.20
+            continue
+        # TODO: use to_astropy_time() instead here when we drop pandas in timeseries
+        index = CDFepoch.to_datetime(index)
+        df = pd.DataFrame(index=pd.DatetimeIndex(name=index_key, data=index))
+        units = {}
+
+        for var_key in sorted(var_keys):
+            if var_key in ignore_vars:
+                pass
+            else:
+                attrs = var_attrs[var_key]
+                # If this variable doesn't depend on this index, continue
+                if attrs['DEPEND_0'] != index_key:
+                    continue
+
+                # Get data
+                if hasattr(cdflib, "__version__") and Version(cdflib.__version__) >= Version("1.0.0"):
+                    var_last_rec = cdf.varinq(var_key).Last_Rec
+                else:
+                    var_last_rec = cdf.varinq(var_key)['Last_Rec']
+                if var_last_rec == -1:
+                    log.debug(f'Skipping {var_key} in {fname} as it has zero elements')
+                    continue
+
+                data = cdf.varget(var_key)
+
+                # Set fillval values to NaN
+                # It would be nice to properley mask these values to work with
+                # non-floating point (ie. int) dtypes, but this is not possible with pandas
+                if np.issubdtype(data.dtype, np.floating):
+                    data[data == attrs['FILLVAL']] = np.nan
+
+                # Get units
+                if 'UNITS' in attrs:
+                    unit_str = attrs['UNITS']
+                    try:
+                        unit = u.Unit(unit_str)
+                    except ValueError:
+                        if unit_str in _known_units:
+                            unit = _known_units[unit_str]
+                        else:
+                            warn_user(f'astropy did not recognize units of "{unit_str}". '
+                                      'Assigning dimensionless units. '
+                                      'If you think this unit should not be dimensionless, '
+                                      'please raise an issue at https://github.com/sunpy/sunpy/issues')
+                            unit = u.dimensionless_unscaled
+                else:
+                    warn_user(f'No units provided for variable "{var_key}". '
+                              'Assigning dimensionless units.')
+                    unit = u.dimensionless_unscaled
+
+                if data.ndim > 2:
+                    # Skip data with dimensions >= 3 and give user warning
+                    warn_user(f'The variable "{var_key}" has been skipped because it has more than 2 dimensions, which is unsupported.')
+                elif data.ndim == 2:
+                    # Multiple columns, give each column a unique label
+                    for i, col in enumerate(data.T):
+                        df[var_key + f'_{i}'] = col
+                        units[var_key + f'_{i}'] = unit
+                else:
+                    # Single column
+                    df[var_key] = data
+                    units[var_key] = unit
+
+        all_ts.append(GenericTimeSeries(data=df, units=units, meta=meta))
+
+    if not len(all_ts):
+        log.debug(f'No data found in file {fname}')
+    return all_ts
