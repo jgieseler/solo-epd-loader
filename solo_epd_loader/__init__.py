@@ -15,16 +15,18 @@ import re
 import sunpy
 import urllib.request
 import warnings
+from packaging.version import Version
 from pathlib import Path
 
 import cdflib
 import numpy as np
 import pandas as pd
 from astropy.io.votable import parse_single_table
-if int(sunpy.__version__[0]) == 4:
-    from sunpy.io.cdf import read_cdf, _known_units
-elif int(sunpy.__version__[0]) >= 5:
+
+if hasattr(sunpy, "__version__") and Version(sunpy.__version__) >= Version("5.0.0"):
     from sunpy.io._cdf import read_cdf, _known_units
+else:
+    from sunpy.io.cdf import read_cdf, _known_units
 from sunpy.timeseries import TimeSeries
 
 # omit Pandas' PerformanceWarning
@@ -653,59 +655,71 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None,
         t_cdf_file = cdflib.CDF(filelist[0])
 
         # p intensities:
-        flux_p_channels = \
-            [protons+f'_Flux_{i}' for i in
-             range(t_cdf_file.varinq(protons+'_Flux')['Dim_Sizes'][0])]
+        if hasattr(cdflib, "__version__") and Version(cdflib.__version__) >= Version("1.0.0"):
+            flux_p_channels = [protons+f'_Flux_{i}' for i in range(t_cdf_file.varinq(protons+'_Flux').Dim_Sizes[0])]
+        else:
+            flux_p_channels = [protons+f'_Flux_{i}' for i in range(t_cdf_file.varinq(protons+'_Flux')['Dim_Sizes'][0])]
         # p errors:
         if level.lower() == 'll':
-            flux_sigma_p_channels = \
-                [protons+f'_Flux_Sigma_{i}' for i in
-                 range(t_cdf_file.varinq(protons+'_Flux')['Dim_Sizes'][0])]
+            if hasattr(cdflib, "__version__") and Version(cdflib.__version__) >= Version("1.0.0"):
+                flux_sigma_p_channels = [protons+f'_Flux_Sigma_{i}' for i in range(t_cdf_file.varinq(protons+'_Flux').Dim_Sizes[0])]
+            else:
+                flux_sigma_p_channels = [protons+f'_Flux_Sigma_{i}' for i in range(t_cdf_file.varinq(protons+'_Flux')['Dim_Sizes'][0])]
         if level.lower() == 'l2':
-            flux_sigma_p_channels = \
-                [protons+f'_Uncertainty_{i}' for i in
-                 range(t_cdf_file.varinq(protons+'_Flux')['Dim_Sizes'][0])]
+            if hasattr(cdflib, "__version__") and Version(cdflib.__version__) >= Version("1.0.0"):
+                flux_sigma_p_channels = [protons+f'_Uncertainty_{i}' for i in range(t_cdf_file.varinq(protons+'_Flux').Dim_Sizes[0])]
+            else:
+                flux_sigma_p_channels = [protons+f'_Uncertainty_{i}' for i in range(t_cdf_file.varinq(protons+'_Flux')['Dim_Sizes'][0])]
             # p rates:
-            rate_p_channels = \
-                [protons+f'_Rate_{i}' for i in
-                 range(t_cdf_file.varinq(protons+'_Rate')['Dim_Sizes'][0])]
+            if hasattr(cdflib, "__version__") and Version(cdflib.__version__) >= Version("1.0.0"):
+                rate_p_channels = [protons+f'_Rate_{i}' for i in range(t_cdf_file.varinq(protons+'_Rate').Dim_Sizes[0])]
+            else:
+                rate_p_channels = [protons+f'_Rate_{i}' for i in range(t_cdf_file.varinq(protons+'_Rate')['Dim_Sizes'][0])]
 
         if sensor.lower() == 'ept':
             # alpha intensities:
-            flux_a_channels = \
-                [f'Alpha_Flux_{i}' for i in
-                 range(t_cdf_file.varinq("Alpha_Flux")['Dim_Sizes'][0])]
+            if hasattr(cdflib, "__version__") and Version(cdflib.__version__) >= Version("1.0.0"):
+                flux_a_channels = [f'Alpha_Flux_{i}' for i in range(t_cdf_file.varinq("Alpha_Flux").Dim_Sizes[0])]
+            else:
+                flux_a_channels = [f'Alpha_Flux_{i}' for i in range(t_cdf_file.varinq("Alpha_Flux")['Dim_Sizes'][0])]
             # alpha errors:
             if level.lower() == 'll':
-                flux_sigma_a_channels = \
-                    [f'Alpha_Flux_Sigma_{i}' for i in
-                     range(t_cdf_file.varinq("Alpha_Flux")['Dim_Sizes'][0])]
+                if hasattr(cdflib, "__version__") and Version(cdflib.__version__) >= Version("1.0.0"):
+                    flux_sigma_a_channels = [f'Alpha_Flux_Sigma_{i}' for i in range(t_cdf_file.varinq("Alpha_Flux").Dim_Sizes[0])]
+                else:
+                    flux_sigma_a_channels = [f'Alpha_Flux_Sigma_{i}' for i in range(t_cdf_file.varinq("Alpha_Flux")['Dim_Sizes'][0])]
             if level.lower() == 'l2':
-                flux_sigma_a_channels = \
-                    [f'Alpha_Uncertainty_{i}' for i in
-                     range(t_cdf_file.varinq("Alpha_Flux")['Dim_Sizes'][0])]
+                if hasattr(cdflib, "__version__") and Version(cdflib.__version__) >= Version("1.0.0"):
+                    flux_sigma_a_channels = [f'Alpha_Uncertainty_{i}' for i in range(t_cdf_file.varinq("Alpha_Flux").Dim_Sizes[0])]
+                else:
+                    flux_sigma_a_channels = [f'Alpha_Uncertainty_{i}' for i in range(t_cdf_file.varinq("Alpha_Flux")['Dim_Sizes'][0])]
                 # alpha rates:
-                rate_a_channels = \
-                    [f'Alpha_Rate_{i}' for i in
-                     range(t_cdf_file.varinq("Alpha_Rate")['Dim_Sizes'][0])]
+                if hasattr(cdflib, "__version__") and Version(cdflib.__version__) >= Version("1.0.0"):
+                    rate_a_channels = [f'Alpha_Rate_{i}' for i in range(t_cdf_file.varinq("Alpha_Rate").Dim_Sizes[0])]
+                else:
+                    rate_a_channels = [f'Alpha_Rate_{i}' for i in range(t_cdf_file.varinq("Alpha_Rate")['Dim_Sizes'][0])]
 
         # e intensities:
-        flux_e_channels = \
-            [electrons+f'_Flux_{i}' for i in
-             range(t_cdf_file.varinq(electrons+'_Flux')['Dim_Sizes'][0])]
+        if hasattr(cdflib, "__version__") and Version(cdflib.__version__) >= Version("1.0.0"):
+            flux_e_channels = [electrons+f'_Flux_{i}' for i in range(t_cdf_file.varinq(electrons+'_Flux').Dim_Sizes[0])]
+        else:
+            flux_e_channels = [electrons+f'_Flux_{i}' for i in range(t_cdf_file.varinq(electrons+'_Flux')['Dim_Sizes'][0])]
         # e errors:
         if level.lower() == 'll':
-            flux_sigma_e_channels = \
-                [f'Ele_Flux_Sigma_{i}' for i in
-                 range(t_cdf_file.varinq(electrons+'_Flux')['Dim_Sizes'][0])]
+            if hasattr(cdflib, "__version__") and Version(cdflib.__version__) >= Version("1.0.0"):
+                flux_sigma_e_channels = [f'Ele_Flux_Sigma_{i}' for i in range(t_cdf_file.varinq(electrons+'_Flux').Dim_Sizes[0])]
+            else:
+                flux_sigma_e_channels = [f'Ele_Flux_Sigma_{i}' for i in range(t_cdf_file.varinq(electrons+'_Flux')['Dim_Sizes'][0])]
         if level.lower() == 'l2':
-            flux_sigma_e_channels = \
-                [f'Electron_Uncertainty_{i}' for i in
-                 range(t_cdf_file.varinq(electrons+'_Flux')['Dim_Sizes'][0])]
+            if hasattr(cdflib, "__version__") and Version(cdflib.__version__) >= Version("1.0.0"):
+                flux_sigma_e_channels = [f'Electron_Uncertainty_{i}' for i in range(t_cdf_file.varinq(electrons+'_Flux').Dim_Sizes[0])]
+            else:
+                flux_sigma_e_channels = [f'Electron_Uncertainty_{i}' for i in range(t_cdf_file.varinq(electrons+'_Flux')['Dim_Sizes'][0])]
             # e rates:
-            rate_e_channels = \
-                [electrons+f'_Rate_{i}' for i in
-                 range(t_cdf_file.varinq(electrons+'_Rate')['Dim_Sizes'][0])]
+            if hasattr(cdflib, "__version__") and Version(cdflib.__version__) >= Version("1.0.0"):
+                rate_e_channels = [electrons+f'_Rate_{i}' for i in range(t_cdf_file.varinq(electrons+'_Rate').Dim_Sizes[0])]
+            else:
+                rate_e_channels = [electrons+f'_Rate_{i}' for i in range(t_cdf_file.varinq(electrons+'_Rate')['Dim_Sizes'][0])]
 
         if level.lower() == 'l2':
             if sensor.lower() == 'het':
@@ -1354,7 +1368,6 @@ def _read_cdf_mod(fname, ignore_vars=[]):
     """
     import astropy.units as u
     from cdflib.epochs import CDFepoch
-    from packaging.version import Version
     from sunpy import log
     from sunpy.timeseries import GenericTimeSeries
     from sunpy.util.exceptions import warn_user
