@@ -145,8 +145,7 @@ def _load_tqdm(verbose=True):
     return tqdm_available, download_url
 
 
-def _get_epd_filelist(sensor, level, startdate, enddate, path,
-                      filenames_only=False):
+def _get_epd_filelist(sensor, level, startdate, enddate, path, filenames_only=False):
     """
     INPUT:
         sensor: 'ept' or 'het'
@@ -199,8 +198,7 @@ def _get_epd_filelist(sensor, level, startdate, enddate, path,
     return filelist
 
 
-def _get_step_filelist(level, startdate, enddate, path,
-                       filenames_only=False):
+def _get_step_filelist(level, startdate, enddate, path, filenames_only=False):
     """
     INPUT:
         level: 'll', 'l2'
@@ -444,8 +442,7 @@ def _autodownload_cdf(startdate, enddate, sensor, level, path):
     return
 
 
-def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=None,
-             autodownload=False, only_averages=False):
+def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=None, autodownload=False, only_averages=False, old_step_loading=True):
     """
     Load SolO/EPD data
 
@@ -485,6 +482,10 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
         If True, will for STEP only return the averaged fluxes, and not the data
         of each of the 15 Pixels. This will reduce the memory consumption. By
         default False.
+    old_step_loading : bool, optional
+        If True, will for old (i.e. before Oct 2021) STEP data loading use the
+        legacy code that provides a multi-index DataFrame as output. Otherwise
+        new loading functionality by sunpy will be used. By default True.
 
     Returns
     -------
@@ -542,7 +543,8 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
 
     if sensor.lower() == 'step':
         datadf, energies_dict = \
-            _read_step_cdf(level, startdate, enddate, path, autodownload, only_averages)
+            _read_step_cdf(level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload,
+                           only_averages=only_averages, old_loading=old_step_loading)
         return datadf, energies_dict
     if sensor.lower() == 'ept' or sensor.lower() == 'het':
         if viewing is None:
@@ -553,13 +555,12 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
             energies_dict = []
         else:
             df_epd_p, df_epd_e, energies_dict = \
-                _read_epd_cdf(sensor, viewing, level, startdate, enddate, path,
-                              autodownload)
+                _read_epd_cdf(sensor=sensor, viewing=viewing, level=level, startdate=startdate, enddate=enddate,
+                              path=path, autodownload=autodownload)
         return df_epd_p, df_epd_e, energies_dict
 
 
-def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None,
-                  autodownload=False):
+def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None, autodownload=False):
     """
     INPUT:
         sensor: 'ept' or 'het' (string)
@@ -838,8 +839,7 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None,
     return df_epd_p, df_epd_e, energies_dict
 
 
-def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False,
-                   only_averages=False):
+def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False, only_averages=False, old_loading=False):
     """
     INPUT:
         level: 'll' or 'l2' (string)
@@ -906,68 +906,70 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
             datadf = []
             energies_dict = []
         elif product == 'rates':
-            all_cdf = []
-            for file in filelist:
-                all_cdf.append(cdflib.CDF(file))
+            if old_loading:
+                all_cdf = []
+                for file in filelist:
+                    all_cdf.append(cdflib.CDF(file))
 
-            if level == 'l2':
-                param_list = ['Integral_Flux', 'Magnet_Flux', 'Integral_Rate',
-                              'Magnet_Rate', 'Magnet_Uncertainty',
-                              'Integral_Uncertainty']
-                # set up the dictionary:
-                energies_dict = \
-                    {"Bins_Text": all_cdf[0].varget('Bins_Text'),
-                     "Bins_Low_Energy": all_cdf[0].varget('Bins_Low_Energy'),
-                     "Bins_Width": all_cdf[0].varget('Bins_Width'),
-                     "Sector_Bins_Text": all_cdf[0].varget('Sector_Bins_Text'),
-                     "Sector_Bins_Low_Energy": all_cdf[0].varget('Sector_Bins_Low_Energy'),
-                     "Sector_Bins_Width": all_cdf[0].varget('Sector_Bins_Width')
-                     }
-            if level == 'll':
-                param_list = ['Integral_Flux', 'Ion_Flux', 'Integral_Flux_Sigma',
-                              'Ion_Flux_Sigma']
-                # set up the dictionary:
-                energies_dict = \
-                    {"Integral_Bins_Text": all_cdf[0].varget('Integral_Bins_Text'),
-                     "Integral_Bins_Low_Energy": all_cdf[0].varget('Integral_Bins_Low_Energy'),
-                     "Integral_Bins_Width": all_cdf[0].varget('Integral_Bins_Width'),
-                     "Ion_Bins_Text": all_cdf[0].varget('Ion_Bins_Text'),
-                     "Ion_Bins_Low_Energy": all_cdf[0].varget('Ion_Bins_Low_Energy'),
-                     "Ion_Bins_Width": all_cdf[0].varget('Ion_Bins_Width')
-                     }
+                if level == 'l2':
+                    param_list = ['Integral_Flux', 'Magnet_Flux', 'Integral_Rate',
+                                  'Magnet_Rate', 'Magnet_Uncertainty',
+                                  'Integral_Uncertainty']
+                    # set up the dictionary:
+                    energies_dict = \
+                        {"Bins_Text": all_cdf[0].varget('Bins_Text'),
+                         "Bins_Low_Energy": all_cdf[0].varget('Bins_Low_Energy'),
+                         "Bins_Width": all_cdf[0].varget('Bins_Width'),
+                         "Sector_Bins_Text": all_cdf[0].varget('Sector_Bins_Text'),
+                         "Sector_Bins_Low_Energy": all_cdf[0].varget('Sector_Bins_Low_Energy'),
+                         "Sector_Bins_Width": all_cdf[0].varget('Sector_Bins_Width')
+                         }
+                if level == 'll':
+                    param_list = ['Integral_Flux', 'Ion_Flux', 'Integral_Flux_Sigma',
+                                  'Ion_Flux_Sigma']
+                    # set up the dictionary:
+                    energies_dict = \
+                        {"Integral_Bins_Text": all_cdf[0].varget('Integral_Bins_Text'),
+                         "Integral_Bins_Low_Energy": all_cdf[0].varget('Integral_Bins_Low_Energy'),
+                         "Integral_Bins_Width": all_cdf[0].varget('Integral_Bins_Width'),
+                         "Ion_Bins_Text": all_cdf[0].varget('Ion_Bins_Text'),
+                         "Ion_Bins_Low_Energy": all_cdf[0].varget('Ion_Bins_Low_Energy'),
+                         "Ion_Bins_Width": all_cdf[0].varget('Ion_Bins_Width')
+                         }
 
-            df_list = []
-            for cdffile in all_cdf:
-                col_list = []
-                for key in param_list:
+                df_list = []
+                for cdffile in all_cdf:
+                    col_list = []
+                    for key in param_list:
+                        try:
+                            t_df = pd.DataFrame(cdffile[key], index=cdffile['EPOCH'])
+
+                            # Replace FILLVAL dynamically for each element of param_list
+                            fillval = cdffile.varattsget(key)["FILLVAL"]
+                            t_df = t_df.replace(fillval, np.nan)
+
+                            col_list.append(t_df)
+                        except TypeError:
+                            print(' ')
+                            print("WARNING: Gap in dataframe due to missing cdf file.")
+                            break
                     try:
-                        t_df = pd.DataFrame(cdffile[key], index=cdffile['EPOCH'])
+                        temp_df = pd.concat(col_list, axis=1, keys=param_list)
+                        df_list.append(temp_df)
+                    except ValueError:
+                        continue
+                datadf = pd.concat(df_list)
 
-                        # Replace FILLVAL dynamically for each element of param_list
-                        fillval = cdffile.varattsget(key)["FILLVAL"]
-                        t_df = t_df.replace(fillval, np.nan)
+                # transform the index of the dataframe into pd_datetime
+                datetimes = cdflib.cdfepoch.encode(datadf.index.values)
+                datadf.index = pd.to_datetime(datetimes)
 
-                        col_list.append(t_df)
-                    except TypeError:
-                        print(' ')
-                        print("WARNING: Gap in dataframe due to missing cdf file.")
-                        break
-                try:
-                    temp_df = pd.concat(col_list, axis=1, keys=param_list)
-                    df_list.append(temp_df)
-                except ValueError:
-                    continue
-            datadf = pd.concat(df_list)
+                datadf.index.names = ['Time']
 
-            # transform the index of the dataframe into pd_datetime
-            datetimes = cdflib.cdfepoch.encode(datadf.index.values)
-            datadf.index = pd.to_datetime(datetimes)
-
-            datadf.index.names = ['Time']
-
-            # if type(contamination_threshold) == int:
-            #     print("'contamination_threshold' not yet included for old STEP data (before Oct 22, 2021)!")
-
+                # if type(contamination_threshold) == int:
+                #     print("'contamination_threshold' not yet included for old STEP data (before Oct 22, 2021)!")
+            else:
+                datadf, energies_dict = _read_new_step_cdf(filelist, only_averages)
         elif product == 'main':
             datadf, energies_dict = _read_new_step_cdf(filelist, only_averages)
 
@@ -981,10 +983,12 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
 
 def _read_new_step_cdf(files, only_averages=False):
     """
-    Function that reads in new format (since Oct 2021) STEP CDF 'files'.
+    Function that reads in old & new format (since Oct 2021) STEP CDF 'files'.
     EPOCH_X dependent data is obtained as Pandas Dataframe via sunpy.
     Time-independent meta data is read in from the first cdf file via cdflib.
     """
+    all_columns = False  # if False, Rate data will be omitted
+
     # read electron correction factors and meta data via cdflib
     cdf = cdflib.CDF(files[0])
     cdf_info = cdf.cdf_info()
@@ -1009,14 +1013,8 @@ def _read_new_step_cdf(files, only_averages=False):
         meta['Electron_Flux_Mult'] = Electron_Flux_Mult
 
     meta['df_rtn_desc'] = cdf.varattsget('RTN')['CATDESC']
-    # TODO: add to meta: 'Sector_Bins_Text', 'Sector_Bins_Low_Energy', 'Sector_Bins_Width' -- don't exist in new data product?
 
     del cdf
-
-    # use sunpy to get Pandas DataFrame of EPOCH_X-dependent variables
-    # data = TimeSeries(files, concatenate=True)
-    # df = data.to_dataframe()
-    # del(data)
 
     df = pd.DataFrame()
     df_rtn = pd.DataFrame()
@@ -1025,7 +1023,6 @@ def _read_new_step_cdf(files, only_averages=False):
         print('Loading', f)
         # data = TimeSeries(f, concatenate=True)
         ignore_vars = []
-        all_columns = False
         if not all_columns:
             # TODO: so far only for new STEP data
             ignore_vars = ['Integral_01_Rate', 'Integral_02_Rate', 'Integral_03_Rate', 'Integral_04_Rate', 'Integral_05_Rate', 'Integral_06_Rate',
@@ -1059,17 +1056,15 @@ def _read_new_step_cdf(files, only_averages=False):
         tdf = tss[0].to_dataframe()
         tdf_rtn = tss[1].to_dataframe()
         tdf_hci = tss[2].to_dataframe()
-        all_columns = False
         if not all_columns:
-            # print('dropping Rates from tdf')
+            # should be removed here; better use ignore_vars above to prohibit that the columns are loaded in the first place
             tdf.drop(columns=tdf.filter(like='Rate').columns, inplace=True)
         # drop per-Pixel data from tdf
         if only_averages:
-            # print('dropping Pixels from tdf')
             drop_cols = ['Integral_0', 'Integral_1', 'Magnet_0', 'Magnet_1']
             for col in drop_cols:
                 tdf.drop(columns=tdf.filter(like=col).columns, inplace=True)
-        # print('merge dataframes...')
+        # merge dataframes
         df = pd.concat([df, tdf])
         df_rtn = pd.concat([df_rtn, tdf_rtn])
         df_hci = pd.concat([df_hci, tdf_hci])
