@@ -1010,6 +1010,8 @@ def _read_new_step_cdf(files, only_averages=False):
     # del(data)
 
     df = pd.DataFrame()
+    df_rtn = pd.DataFrame()
+    df_hci = pd.DataFrame()
     for f in files:
         print('Loading', f)
         # data = TimeSeries(f, concatenate=True)
@@ -1039,10 +1041,13 @@ def _read_new_step_cdf(files, only_averages=False):
                            'Magnet_13_Rate', 'Magnet_14_Flux', 'Magnet_14_Uncertainty', 'Magnet_14_Rate', 'Magnet_15_Flux', 'Magnet_15_Uncertainty',
                            'Magnet_15_Rate', 'Integral_00_Rate', 'Magnet_00_Rate']
         tss = _read_cdf_mod(f, ignore_vars=ignore_vars)
-        data = tss.pop(0)
-        for ts in tss:
-            data = data.concatenate(ts)
-        tdf = data.to_dataframe()
+        # data = tss.pop(0)
+        # for ts in tss:
+        #     data = data.concatenate(ts)
+        # tdf = data.to_dataframe()
+        tdf = tss[0].to_dataframe()
+        tdf_rtn = tss[1].to_dataframe()
+        tdf_hci = tss[2].to_dataframe()
         all_columns = False
         if not all_columns:
             # print('dropping Rates from tdf')
@@ -1055,15 +1060,17 @@ def _read_new_step_cdf(files, only_averages=False):
                 tdf.drop(columns=tdf.filter(like=col).columns, inplace=True)
         # print('merge dataframes...')
         df = pd.concat([df, tdf])
-        del (data, tdf)
+        df_rtn = pd.concat([df_rtn, tdf_rtn])
+        df_hci = pd.concat([df_hci, tdf_hci])
+        del (tss, tdf, tdf_rtn, tdf_hci)
 
     # move RTN and HCI to different df's because they have different time indices
     # print('move RTN')
-    df_rtn = df[['RTN_0', 'RTN_1', 'RTN_2']].dropna(how='all')
-    df = df.drop(columns=['RTN_0', 'RTN_1', 'RTN_2']).dropna(how='all')  # remove lines only containing NaN's (all)
+    # df_rtn = df[['RTN_0', 'RTN_1', 'RTN_2']].dropna(how='all')
+    # df = df.drop(columns=['RTN_0', 'RTN_1', 'RTN_2']).dropna(how='all')  # remove lines only containing NaN's (all)
     # print('move HCI')
-    df_hci = df[['HCI_Lat', 'HCI_Lon', 'HCI_R']].dropna(how='all')
-    df = df.drop(columns=['HCI_Lat', 'HCI_Lon', 'HCI_R']).dropna(how='all')  # remove lines only containing NaN's (all)
+    # df_hci = df[['HCI_Lat', 'HCI_Lon', 'HCI_R']].dropna(how='all')
+    # df = df.drop(columns=['HCI_Lat', 'HCI_Lon', 'HCI_R']).dropna(how='all')  # remove lines only containing NaN's (all)
     meta['df_rtn'] = df_rtn
     del df_rtn
     meta['df_hci'] = df_hci
