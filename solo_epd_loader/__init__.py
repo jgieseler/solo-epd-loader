@@ -987,17 +987,26 @@ def _read_new_step_cdf(files, only_averages=False):
     """
     # read electron correction factors and meta data via cdflib
     cdf = cdflib.CDF(files[0])
-    Electron_Flux_Mult = {'Electron_Avg_Flux_Mult': cdf['Electron_Avg_Flux_Mult']}
-    # if not only_averages:
-    for i in range(1, 16):
-        Electron_Flux_Mult['Electron_'+str(i).rjust(2, '0')+'_Flux_Mult'] = cdf['Electron_'+str(i).rjust(2, '0')+'_Flux_Mult']
-    # df_Electron_Flux_Mult = pd.DataFrame(Electron_Flux_Mult)  # get dataframe from dict - not needed atm.
+    cdf_info = cdf.cdf_info()
+    if hasattr(cdflib, "__version__") and Version(cdflib.__version__) >= Version("1.0.0"):
+        all_var_keys = cdf_info.rVariables + cdf_info.zVariables
+    else:
+        all_var_keys = cdf_info['rVariables'] + cdf_info['zVariables']
+    var_attrs = {key: cdf.varattsget(key) for key in all_var_keys}
+    support_var_keys = [var for var in var_attrs if not 'DEPEND_0' in var_attrs[var] and not var.startswith('EPOCH') and not var.endswith('_Flux_Mult')]
 
-    meta = {'Bins_Low_Energy': cdf['Bins_Low_Energy']}
-    for i in ['Bins_Width', 'Bins_Text', 'Electron_Bins_Low_Energy', 'Electron_Bins_Width', 'Electron_Bins_Text', 'XYZ', 'XYZ_Pixels', 'XYZ_Labels', 'RTN_Labels']:
+    meta = {support_var_keys[0]: cdf[support_var_keys.pop(0)]}
+    for i in support_var_keys:
         meta[i] = cdf[i]
 
-    meta['Electron_Flux_Mult'] = Electron_Flux_Mult
+    if 'Electron_Avg_Flux_Mult' in var_attrs:
+        Electron_Flux_Mult = {'Electron_Avg_Flux_Mult': cdf['Electron_Avg_Flux_Mult']}
+        # if not only_averages:
+        for i in range(1, 16):
+            Electron_Flux_Mult['Electron_'+str(i).rjust(2, '0')+'_Flux_Mult'] = cdf['Electron_'+str(i).rjust(2, '0')+'_Flux_Mult']
+        # df_Electron_Flux_Mult = pd.DataFrame(Electron_Flux_Mult)  # get dataframe from dict - not needed atm.
+
+        meta['Electron_Flux_Mult'] = Electron_Flux_Mult
 
     meta['df_rtn_desc'] = cdf.varattsget('RTN')['CATDESC']
     # TODO: add to meta: 'Sector_Bins_Text', 'Sector_Bins_Low_Energy', 'Sector_Bins_Width' -- don't exist in new data product?
@@ -1018,12 +1027,14 @@ def _read_new_step_cdf(files, only_averages=False):
         ignore_vars = []
         all_columns = False
         if not all_columns:
+            # TODO: so far only for new STEP data
             ignore_vars = ['Integral_01_Rate', 'Integral_02_Rate', 'Integral_03_Rate', 'Integral_04_Rate', 'Integral_05_Rate', 'Integral_06_Rate',
                            'Integral_07_Rate', 'Integral_08_Rate', 'Integral_09_Rate', 'Integral_10_Rate', 'Integral_11_Rate', 'Integral_12_Rate',
                            'Integral_13_Rate', 'Integral_14_Rate', 'Integral_15_Rate', 'Magnet_01_Rate', 'Magnet_02_Rate', 'Magnet_03_Rate', 'Magnet_04_Rate',
                            'Magnet_05_Rate', 'Magnet_06_Rate', 'Magnet_07_Rate', 'Magnet_08_Rate', 'Magnet_09_Rate', 'Magnet_10_Rate', 'Magnet_11_Rate',
                            'Magnet_12_Rate', 'Magnet_13_Rate', 'Magnet_14_Rate', 'Magnet_15_Rate', 'Integral_00_Rate', 'Magnet_00_Rate']
         if only_averages:
+            # TODO: so far only for new STEP data
             ignore_vars = ['Integral_01_Flux', 'Integral_01_Uncertainty', 'Integral_01_Rate', 'Integral_02_Flux', 'Integral_02_Uncertainty',
                            'Integral_02_Rate', 'Integral_03_Flux', 'Integral_03_Uncertainty', 'Integral_03_Rate', 'Integral_04_Flux', 'Integral_04_Uncertainty',
                            'Integral_04_Rate', 'Integral_05_Flux', 'Integral_05_Uncertainty', 'Integral_05_Rate', 'Integral_06_Flux', 'Integral_06_Uncertainty',
