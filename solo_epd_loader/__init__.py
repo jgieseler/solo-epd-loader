@@ -1097,7 +1097,8 @@ def _read_new_step_cdf(files, only_averages=False):
     # add 'Avg' to old STEP data product's corresponding columns (Magnet_Flux_0 => Magnet_Avg_Flux_0) in order to be consistent with new data product
     avg_dict = {}
     for col in df.columns.to_list():
-        if col.startswith('Integral_') or col.startswith('Magnet_'):
+        if col.startswith('Integral_Rate_') or col.startswith('Integral_Flux_') or col.startswith('Integral_Uncertainty_') or \
+           col.startswith('Magnet_Rate_') or col.startswith('Magnet_Flux_') or col.startswith('Magnet_Uncertainty_'):
             avg_dict[col] = col.replace(col.split('_')[0], col.split('_')[0]+'_Avg')
     df.rename(columns=avg_dict, inplace=True)
 
@@ -1147,7 +1148,20 @@ def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, res
     """
     df = df.copy()
 
-    Electron_Flux_Mult = meta['Electron_Flux_Mult']
+    if df.index[0] <= pd.Timestamp(dt.date(2021, 10, 22)):  # old STEP data
+        # TODO: add Electron_xx_Flux_Mult for all pixels. until then, only calculate Averages
+        if not only_averages:
+            print('For old STEP data only pixel-averaged electron fluxes supported at the moment!')
+            only_averages = True  # remove when adding Electron_xx_Flux_Mult
+        Electron_Flux_Mult = {'Electron_Avg_Flux_Mult':
+                              np.array([0.6, 0.61, 0.63, 0.68, 0.76, 0.81, 1.06, 1.32, 1.35, 1.35, 1.35,
+                                        1.34, 1.34, 1.35, 1.38, 1.36, 1.32, 1.32, 1.28, 1.26, 1.15, 1.15,
+                                        1.15, 1.15, 1.16, 1.16, 1.16, 1.17, 1.17, 1.16, 1.18, 1.17, 1.17,
+                                        1.16, 1.17, 1.15, 1.16, 1.17, 1.18, 1.17, 1.17, 1.17, 1.18, 1.18,
+                                        1.19, 1.18, 1.19, 1.2])}
+    elif df.index[0] > pd.Timestamp(dt.date(2021, 10, 22)):  # new STEP data
+        print('new data')
+        Electron_Flux_Mult = meta['Electron_Flux_Mult']
 
     if resample:
         # for all Integral and Magnet Uncertainties:
