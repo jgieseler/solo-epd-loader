@@ -1458,7 +1458,7 @@ def _read_cdf_mod(fname, ignore_vars=[]):
 
         for var_key in sorted(var_keys):
             if var_key in ignore_vars:
-                pass
+                pass  # TODO: or continue?
             else:
                 attrs = var_attrs[var_key]
                 # If this variable doesn't depend on this index, continue
@@ -1501,9 +1501,26 @@ def _read_cdf_mod(fname, ignore_vars=[]):
                               'Assigning dimensionless units.')
                     unit = u.dimensionless_unscaled
 
-                if data.ndim > 2:
+                if data.ndim > 3:
                     # Skip data with dimensions >= 3 and give user warning
-                    warn_user(f'The variable "{var_key}" has been skipped because it has more than 2 dimensions, which is unsupported.')
+                    warn_user(f'The variable "{var_key}" has been skipped because it has more than 3 dimensions, which is unsupported.')
+                elif data.ndim == 3:
+                    # Multiple columns, give each column a unique label
+                    if var_key.startswith('Sector_'):
+                        for j in range(data.T.shape[0]):
+                            for i, col in enumerate(data.T[j, :, :]):
+                                var_key_mod = var_key.removeprefix('Sector_')
+                                var_key_mod = var_key_mod.replace('_', '_'+str(j).rjust(2, '0')+'_')     # j with trailing zero!
+                                df[var_key_mod + f'_{i}'] = col
+                                units[var_key_mod + f'_{i}'] = unit
+                    elif var_key == 'RTN_Sectors' or var_key == 'RTN_Pixels':
+                        for j in range(data.T.shape[1]):
+                            for i, col in enumerate(data.T[:, j, :]):
+                                var_key_mod = var_key+'_'+str(j).rjust(2, '0')
+                                df[var_key_mod + f'_{i}'] = col
+                                units[var_key_mod + f'_{i}'] = unit
+                    else:
+                        warn_user(f'The variable "{var_key}" has been skipped because it is unsupported.')
                 elif data.ndim == 2:
                     # Multiple columns, give each column a unique label
                     for i, col in enumerate(data.T):
