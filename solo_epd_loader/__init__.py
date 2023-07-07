@@ -1094,11 +1094,18 @@ def _read_new_step_cdf(files, only_averages=False):
     df = calc_electrons(df, meta, contamination_threshold=contamination_threshold, only_averages=only_averages, resample=False)
     """
 
+    # add 'Avg' to old STEP data product's corresponding columns (Magnet_Flux_0 => Magnet_Avg_Flux_0) in order to be consistent with new data product
+    avg_dict = {}
+    for col in df.columns.to_list():
+        if col.startswith('Integral_') or col.startswith('Magnet_'):
+            avg_dict[col] = col.replace(col.split('_')[0], col.split('_')[0]+'_Avg')
+    df.rename(columns=avg_dict, inplace=True)
+
     # TODO: replace all negative values in dataframe with np.nan (applies for electron fluxes that get negative in their calculation)
     # ==> not needed any more after masking above?
     # df = df.mask(df < 0)
 
-    # TODO: multi-index (or rather multi-column) dataframe like previous product?
+    # TODO: multi-index (or rather multi-column) dataframe like previous product? => create_multiindex(df)
 
     # df3['QUALITY_FLAG'] = df['QUALITY_FLAG']
     # df3['QUALITY_BITMASK'] = df['QUALITY_BITMASK']
@@ -1351,6 +1358,29 @@ def _resample_df_old(df, resample, pos_timestamp="center", origin="start"):
     except ValueError:
         raise ValueError(f"Your 'resample' option of [{resample}] doesn't seem to be a proper Pandas frequency!")
 
+    return df
+
+
+def create_multiindex(df):
+    """
+    Create a multiindex dataframe from a standard dataframe. The input standard
+    dataframe is expected to be provided by SunPy read_cdf() or TimeSeries() for
+    multidimensional data. That is, the dataframe columns are named 'VAR_0',
+    'VAR_1', 'VAR_2' and so on. Multiindex dataframe will then have a column
+    named 'VAR' with sub-columns 'VAR_0', 'VAR_1', 'VAR_2'.
+    """
+    cols = df.columns.to_list()
+    arrays = [np.copy(cols), np.copy(cols)]
+    for i, item in enumerate(cols):
+        if item[-1].isnumeric():
+            arrays[0][i] = "_".join(item.split("_")[:-1])
+
+    # https://pandas.pydata.org/pandas-docs/stable/user_guide/advanced.html
+    tuples = list(zip(*arrays))
+    index = pd.MultiIndex.from_tuples(tuples)
+
+    df = pd.DataFrame(df.values, index=df.index, columns=index)
+    #  df.index.names = ['Time']
     return df
 
 
