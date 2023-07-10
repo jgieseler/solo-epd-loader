@@ -997,7 +997,7 @@ def _read_new_step_cdf(files, only_averages=False):
     else:
         all_var_keys = cdf_info['rVariables'] + cdf_info['zVariables']
     var_attrs = {key: cdf.varattsget(key) for key in all_var_keys}
-    support_var_keys = [var for var in var_attrs if not 'DEPEND_0' in var_attrs[var] and not var.startswith('EPOCH') and not var.endswith('_Flux_Mult')]
+    support_var_keys = [var for var in var_attrs if 'DEPEND_0' not in var_attrs[var] and not var.startswith('EPOCH') and not var.endswith('_Flux_Mult')]
 
     meta = {support_var_keys[0]: cdf[support_var_keys.pop(0)]}
     for i in support_var_keys:
@@ -1094,6 +1094,45 @@ def _read_new_step_cdf(files, only_averages=False):
     df = calc_electrons(df, meta, contamination_threshold=contamination_threshold, only_averages=only_averages, resample=False)
     """
 
+    # define old STEP data electron multiplication factors
+    if 'Electron_Flux_Mult' not in meta.keys():
+        if df.index[0] <= pd.Timestamp(dt.date(2021, 10, 22)):  # old STEP data
+            meta['Electron_Flux_Mult'] = {'Electron_Avg_Flux_Mult': np.array([0.6, 0.61, 0.63, 0.68, 0.76, 0.81, 1.06, 1.32, 1.35, 1.35, 1.35,
+                                                                              1.34, 1.34, 1.35, 1.38, 1.36, 1.32, 1.32, 1.28, 1.26, 1.15, 1.15,
+                                                                              1.15, 1.15, 1.16, 1.16, 1.16, 1.17, 1.17, 1.16, 1.18, 1.17, 1.17,
+                                                                              1.16, 1.17, 1.15, 1.16, 1.17, 1.18, 1.17, 1.17, 1.17, 1.18, 1.18,
+                                                                              1.19, 1.18, 1.19, 1.2])}
+            for i in range(1, 16):
+                meta['Electron_Flux_Mult']['Electron_'+str(i).rjust(2, '0')+'_Flux_Mult'] = np.array([0.66, 1.22, 1.35, 1.36, 1.18, 1.17, 1.16, 1.18])
+
+    # define old STEP data electron energy values
+    if 'Electron_Bins_Low_Energy' not in meta.keys():
+        if 'Electron_Avg_Bins_Low_Energy' not in meta.keys():
+            if df.index[0] <= pd.Timestamp(dt.date(2021, 10, 22)):  # old STEP data
+                meta['Electron_Avg_Bins_Low_Energy'] = np.array([4.09, 4.37, 4.56, 4.83, 5.17, 5.4, 5.65, 5.96, 6.42,
+                                                                 6.7, 7.05, 9.06, 9.81, 10.25, 10.69, 11.71, 12.21, 12.73,
+                                                                 13.87, 14.45, 15.09, 16.43, 17.19, 18.72, 19.5, 20.4, 22.32,
+                                                                 23.34, 24.32, 26.54, 27.65, 28.83, 31.35, 32.77, 35.88, 37.4,
+                                                                 38.92, 42.55, 44.6, 46.65, 50.7, 53.04, 55.34, 60.21, 62.73,
+                                                                 68.55, 71.66, 74.84])
+                meta['Electron_Avg_Bins_High_Energy'] = np.array([4.57, 4.79, 4.97, 5.31, 5.55, 5.78, 6.03, 6.48, 6.78,
+                                                                  7.07, 9.06, 9.81, 10.25, 10.69, 11.71, 12.21, 12.73, 13.87,
+                                                                  14.45, 15.09, 16.43, 17.19, 18.72, 19.5, 20.4, 22.32, 23.34,
+                                                                  24.32, 26.54, 27.65, 28.83, 31.35, 32.77, 35.88, 37.4, 38.92,
+                                                                  42.55, 44.6, 46.65, 50.7, 53.04, 55.34, 60.21, 62.73, 68.55,
+                                                                  71.66, 74.84, 81.36])
+                meta['Electron_Avg_Bins_Text'] = np.array([[f"{meta['Electron_Avg_Bins_Low_Energy'][i]} - {meta['Electron_Avg_Bins_High_Energy'][i]} keV"] for i in range(len(meta['Electron_Avg_Bins_High_Energy']))])
+                meta['Electron_Avg_Bins_Low_Energy'] = meta['Electron_Avg_Bins_Low_Energy']/1000  # convert from keV to MeV for consistency with new STEP data
+                meta['Electron_Avg_Bins_High_Energy'] = meta['Electron_Avg_Bins_High_Energy']/1000  # convert from keV to MeV for consistency with new STEP data
+                meta['Electron_Avg_Bins_Width'] = meta['Electron_Avg_Bins_High_Energy'] - meta['Electron_Avg_Bins_Low_Energy']
+
+                meta['Electron_Sectors_Bins_Low_Energy'] = np.array([4.19, 5.50, 7.04, 9.06, 13.88, 21.29, 32.77, 53.05])
+                meta['Electron_Sectors_Bins_High_Energy'] = np.array([5.50, 7.04, 9.06, 13.88, 21.29, 32.77, 53.05, 81.38])
+                meta['Electron_Sectors_Bins_Text'] = np.array([[f"{meta['Electron_Sectors_Bins_Low_Energy'][i]} - {meta['Electron_Sectors_Bins_High_Energy'][i]} keV"] for i in range(len(meta['Electron_Sectors_Bins_High_Energy']))])
+                meta['Electron_Sectors_Bins_Low_Energy'] = meta['Electron_Sectors_Bins_Low_Energy']/1000  # convert from keV to MeV for consistency with new STEP data
+                meta['Electron_Sectors_Bins_High_Energy'] = meta['Electron_Sectors_Bins_High_Energy']/1000  # convert from keV to MeV for consistency with new STEP data
+                meta['Electron_Sectors_Bins_Width'] = meta['Electron_Sectors_Bins_High_Energy'] - meta['Electron_Sectors_Bins_Low_Energy']
+
     # add 'Avg' to old STEP data product's corresponding columns (Magnet_Flux_0 => Magnet_Avg_Flux_0) in order to be consistent with new data product
     avg_dict = {}
     for col in df.columns.to_list():
@@ -1148,20 +1187,24 @@ def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, res
     """
     df = df.copy()
 
-    if df.index[0] <= pd.Timestamp(dt.date(2021, 10, 22)):  # old STEP data
-        # TODO: add Electron_xx_Flux_Mult for all pixels. until then, only calculate Averages
-        if not only_averages:
-            print('For old STEP data only pixel-averaged electron fluxes supported at the moment!')
-            only_averages = True  # remove when adding Electron_xx_Flux_Mult
-        Electron_Flux_Mult = {'Electron_Avg_Flux_Mult':
-                              np.array([0.6, 0.61, 0.63, 0.68, 0.76, 0.81, 1.06, 1.32, 1.35, 1.35, 1.35,
-                                        1.34, 1.34, 1.35, 1.38, 1.36, 1.32, 1.32, 1.28, 1.26, 1.15, 1.15,
-                                        1.15, 1.15, 1.16, 1.16, 1.16, 1.17, 1.17, 1.16, 1.18, 1.17, 1.17,
-                                        1.16, 1.17, 1.15, 1.16, 1.17, 1.18, 1.17, 1.17, 1.17, 1.18, 1.18,
-                                        1.19, 1.18, 1.19, 1.2])}
-    elif df.index[0] > pd.Timestamp(dt.date(2021, 10, 22)):  # new STEP data
-        print('new data')
-        Electron_Flux_Mult = meta['Electron_Flux_Mult']
+    # if df.index[0] <= pd.Timestamp(dt.date(2021, 10, 22)):  # old STEP data
+    #     # TODO: add Electron_xx_Flux_Mult for all pixels. until then, only calculate Averages
+    #     if not only_averages:
+    #         print('For old STEP data only pixel-averaged electron fluxes supported at the moment!')
+    #         only_averages = True  # remove when adding Electron_xx_Flux_Mult
+    #     # Electron_Flux_Mult = {'Electron_Avg_Flux_Mult':
+    #     #                       np.array([0.6, 0.61, 0.63, 0.68, 0.76, 0.81, 1.06, 1.32, 1.35, 1.35, 1.35,
+    #     #                                 1.34, 1.34, 1.35, 1.38, 1.36, 1.32, 1.32, 1.28, 1.26, 1.15, 1.15,
+    #     #                                 1.15, 1.15, 1.16, 1.16, 1.16, 1.17, 1.17, 1.16, 1.18, 1.17, 1.17,
+    #     #                                 1.16, 1.17, 1.15, 1.16, 1.17, 1.18, 1.17, 1.17, 1.17, 1.18, 1.18,
+    #     #                                 1.19, 1.18, 1.19, 1.2])}
+    #     # for i in range(1, 16):
+    #     #     Electron_Flux_Mult['Electron_'+str(i).rjust(2, '0')+'_Flux_Mult'] = np.array([0.66, 1.22, 1.35, 1.36, 1.18, 1.17, 1.16, 1.18])
+    # elif df.index[0] > pd.Timestamp(dt.date(2021, 10, 22)):  # new STEP data
+    #     print('new data')
+    #     Electron_Flux_Mult = meta['Electron_Flux_Mult']
+    
+    Electron_Flux_Mult = meta['Electron_Flux_Mult']
 
     if resample:
         # for all Integral and Magnet Uncertainties:
@@ -1203,21 +1246,20 @@ def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, res
         pix_list = ['Avg']+[str(n).rjust(2, '0') for n in range(1, 16)]
 
     # calculate electron fluxes from Magnet and Integral Fluxes using correction factors
-    for i in range(len(Electron_Flux_Mult['Electron_Avg_Flux_Mult'])):  # 32 energy channels
-        for pix in pix_list:  # Avg, pixel 01 - 15 (00 is background pixel)
-            df[f'Electron_{pix}_Flux_{i}'] = Electron_Flux_Mult[f'Electron_{pix}_Flux_Mult'][i] * (df[f'Integral_{pix}_Flux_{i}'] - df[f'Magnet_{pix}_Flux_{i}'])
-            df[f'Electron_{pix}_Uncertainty_{i}'] = \
-                Electron_Flux_Mult[f'Electron_{pix}_Flux_Mult'][i] * np.sqrt(df[f'Integral_{pix}_Uncertainty_{i}']**2 + df[f'Magnet_{pix}_Uncertainty_{i}']**2)
-
-            if type(contamination_threshold) == int:
-                if contamination_threshold != 0:
-                    clean = (df[f'Integral_{pix}_Flux_{i}'] - df[f'Magnet_{pix}_Flux_{i}']) > contamination_threshold*df[f'Integral_{pix}_Uncertainty_{i}']
-                    # clean = (df[f'Integral_{pix}_Rate_{i}'] - df[f'Magnet_{pix}_Rate_{i}']) > contamination_threshold*np.sqrt(df[f'Integral_{pix}_Rate_{i}'])/np.sqrt(df['DELTA_EPOCH'])
-                    # clean = (df[f'Integral_{pix}_Rate_{i}'] - df[f'Magnet_{pix}_Rate_{i}']) > contamination_threshold*np.sqrt(df[f'Integral_{pix}_Counts_{i}'])/df['DELTA_EPOCH']
-
-                    # mask non-clean data
-                    df[f'Electron_{pix}_Flux_{i}'] = df[f'Electron_{pix}_Flux_{i}'].mask(~clean)
-                    df[f'Electron_{pix}_Uncertainty_{i}'] = df[f'Electron_{pix}_Uncertainty_{i}'].mask(~clean)
+    # for old data, calculation needs to be separated for Avg and pixels bc. of different amount of energy channels (48 vs 8):
+    if not only_averages and len(Electron_Flux_Mult['Electron_Avg_Flux_Mult']) != len(Electron_Flux_Mult['Electron_01_Flux_Mult']):
+        # Avg only:
+        pix = pix_list.pop(0)
+        for i in range(len(Electron_Flux_Mult['Electron_Avg_Flux_Mult'])):  # 48 energy channels for old data (for Avg)
+            df = _calc_electrons_per_pixel_and_channel(df, Electron_Flux_Mult, pix, contamination_threshold, i)
+        # all pixels, without Avg:
+        for i in range(len(Electron_Flux_Mult['Electron_01_Flux_Mult'])):  # 8 energy channels for old data (per pixel)
+            for pix in pix_list:  # pixel 01 - 15 (00 is background pixel)
+                df = _calc_electrons_per_pixel_and_channel(df, Electron_Flux_Mult, pix, contamination_threshold, i)
+    else:  # classic approach:
+        for i in range(len(Electron_Flux_Mult['Electron_Avg_Flux_Mult'])):  # 32 energy channels for new data, 48 for old data (Avg)
+            for pix in pix_list:  # Avg, pixel 01 - 15 (00 is background pixel)
+                df = _calc_electrons_per_pixel_and_channel(df, Electron_Flux_Mult, pix, contamination_threshold, i)
 
     if contamination_threshold == 0:
         print("contamination_threshold has been set to 0. Ignoring the contamination_threshold (i.e., NOT calculating it for 0)!")
@@ -1228,6 +1270,25 @@ def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, res
     # remove negative fluxes (probably not needed for masked data, but for contamination_threshold=None)
     df = df.mask(df < 0)
 
+    return df
+
+
+def _calc_electrons_per_pixel_and_channel(df, Electron_Flux_Mult, pixel, contamination_threshold, energy_channel):
+    pix = pixel
+    i = energy_channel
+    df[f'Electron_{pix}_Flux_{i}'] = Electron_Flux_Mult[f'Electron_{pix}_Flux_Mult'][i] * (df[f'Integral_{pix}_Flux_{i}'] - df[f'Magnet_{pix}_Flux_{i}'])
+    df[f'Electron_{pix}_Uncertainty_{i}'] = \
+        Electron_Flux_Mult[f'Electron_{pix}_Flux_Mult'][i] * np.sqrt(df[f'Integral_{pix}_Uncertainty_{i}']**2 + df[f'Magnet_{pix}_Uncertainty_{i}']**2)
+
+    if type(contamination_threshold) == int:
+        if contamination_threshold != 0:
+            clean = (df[f'Integral_{pix}_Flux_{i}'] - df[f'Magnet_{pix}_Flux_{i}']) > contamination_threshold*df[f'Integral_{pix}_Uncertainty_{i}']
+            # clean = (df[f'Integral_{pix}_Rate_{i}'] - df[f'Magnet_{pix}_Rate_{i}']) > contamination_threshold*np.sqrt(df[f'Integral_{pix}_Rate_{i}'])/np.sqrt(df['DELTA_EPOCH'])
+            # clean = (df[f'Integral_{pix}_Rate_{i}'] - df[f'Magnet_{pix}_Rate_{i}']) > contamination_threshold*np.sqrt(df[f'Integral_{pix}_Counts_{i}'])/df['DELTA_EPOCH']
+
+            # mask non-clean data
+            df[f'Electron_{pix}_Flux_{i}'] = df[f'Electron_{pix}_Flux_{i}'].mask(~clean)
+            df[f'Electron_{pix}_Uncertainty_{i}'] = df[f'Electron_{pix}_Uncertainty_{i}'].mask(~clean)
     return df
 
 
@@ -1505,18 +1566,19 @@ def _read_cdf_mod(fname, ignore_vars=[]):
                     # Skip data with dimensions >= 3 and give user warning
                     warn_user(f'The variable "{var_key}" has been skipped because it has more than 3 dimensions, which is unsupported.')
                 elif data.ndim == 3:
-                    # Multiple columns, give each column a unique label
+                    # Multiple columns, give each column a unique label.
+                    # Numbering hard-corded to SolO/EPD/STEP (old) data!
                     if var_key.startswith('Sector_'):
                         for j in range(data.T.shape[0]):
                             for i, col in enumerate(data.T[j, :, :]):
                                 var_key_mod = var_key.removeprefix('Sector_')
-                                var_key_mod = var_key_mod.replace('_', '_'+str(j).rjust(2, '0')+'_')     # j with trailing zero!
+                                var_key_mod = var_key_mod.replace('_', '_'+str(j+1).rjust(2, '0')+'_')  # j+1: numbering hard-corded to SolO/EPD/STEP (old) data!
                                 df[var_key_mod + f'_{i}'] = col
                                 units[var_key_mod + f'_{i}'] = unit
                     elif var_key == 'RTN_Sectors' or var_key == 'RTN_Pixels':
                         for j in range(data.T.shape[1]):
                             for i, col in enumerate(data.T[:, j, :]):
-                                var_key_mod = var_key+'_'+str(j).rjust(2, '0')
+                                var_key_mod = var_key+'_'+str(j+1).rjust(2, '0')  # j+1: numbering hard-corded to SolO/EPD/STEP (old) data!
                                 df[var_key_mod + f'_{i}'] = col
                                 units[var_key_mod + f'_{i}'] = unit
                     else:
