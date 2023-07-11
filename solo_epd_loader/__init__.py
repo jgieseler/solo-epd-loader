@@ -1025,29 +1025,28 @@ def _read_new_step_cdf(files, only_averages=False):
         ignore_vars = []
         if not all_columns:
             # TODO: so far only for new STEP data
-            ignore_vars = ['Integral_01_Rate', 'Integral_02_Rate', 'Integral_03_Rate', 'Integral_04_Rate', 'Integral_05_Rate', 'Integral_06_Rate',
-                           'Integral_07_Rate', 'Integral_08_Rate', 'Integral_09_Rate', 'Integral_10_Rate', 'Integral_11_Rate', 'Integral_12_Rate',
-                           'Integral_13_Rate', 'Integral_14_Rate', 'Integral_15_Rate', 'Magnet_01_Rate', 'Magnet_02_Rate', 'Magnet_03_Rate', 'Magnet_04_Rate',
-                           'Magnet_05_Rate', 'Magnet_06_Rate', 'Magnet_07_Rate', 'Magnet_08_Rate', 'Magnet_09_Rate', 'Magnet_10_Rate', 'Magnet_11_Rate',
-                           'Magnet_12_Rate', 'Magnet_13_Rate', 'Magnet_14_Rate', 'Magnet_15_Rate', 'Integral_00_Rate', 'Magnet_00_Rate']
+            ignore_vars = ignore_vars + ['Integral_01_Rate', 'Integral_02_Rate', 'Integral_03_Rate', 'Integral_04_Rate', 'Integral_05_Rate', 'Integral_06_Rate',
+                                         'Integral_07_Rate', 'Integral_08_Rate', 'Integral_09_Rate', 'Integral_10_Rate', 'Integral_11_Rate', 'Integral_12_Rate',
+                                         'Integral_13_Rate', 'Integral_14_Rate', 'Integral_15_Rate', 'Magnet_01_Rate', 'Magnet_02_Rate', 'Magnet_03_Rate', 'Magnet_04_Rate',
+                                         'Magnet_05_Rate', 'Magnet_06_Rate', 'Magnet_07_Rate', 'Magnet_08_Rate', 'Magnet_09_Rate', 'Magnet_10_Rate', 'Magnet_11_Rate',
+                                         'Magnet_12_Rate', 'Magnet_13_Rate', 'Magnet_14_Rate', 'Magnet_15_Rate', 'Integral_00_Rate', 'Magnet_00_Rate']
         if only_averages:
             # TODO: so far only for new STEP data
-            ignore_vars = ['Integral_01_Flux', 'Integral_01_Uncertainty', 'Integral_01_Rate', 'Integral_02_Flux', 'Integral_02_Uncertainty',
-                           'Integral_02_Rate', 'Integral_03_Flux', 'Integral_03_Uncertainty', 'Integral_03_Rate', 'Integral_04_Flux', 'Integral_04_Uncertainty',
-                           'Integral_04_Rate', 'Integral_05_Flux', 'Integral_05_Uncertainty', 'Integral_05_Rate', 'Integral_06_Flux', 'Integral_06_Uncertainty',
-                           'Integral_06_Rate', 'Integral_07_Flux', 'Integral_07_Uncertainty', 'Integral_07_Rate', 'Integral_08_Flux', 'Integral_08_Uncertainty',
-                           'Integral_08_Rate', 'Integral_09_Flux', 'Integral_09_Uncertainty', 'Integral_09_Rate', 'Integral_10_Flux', 'Integral_10_Uncertainty',
-                           'Integral_10_Rate', 'Integral_11_Flux', 'Integral_11_Uncertainty', 'Integral_11_Rate', 'Integral_12_Flux', 'Integral_12_Uncertainty',
-                           'Integral_12_Rate', 'Integral_13_Flux', 'Integral_13_Uncertainty', 'Integral_13_Rate', 'Integral_14_Flux', 'Integral_14_Uncertainty',
-                           'Integral_14_Rate', 'Integral_15_Flux', 'Integral_15_Uncertainty', 'Integral_15_Rate', 'Magnet_01_Flux', 'Magnet_01_Uncertainty',
-                           'Magnet_01_Rate', 'Magnet_02_Flux', 'Magnet_02_Uncertainty', 'Magnet_02_Rate', 'Magnet_03_Flux', 'Magnet_03_Uncertainty',
-                           'Magnet_03_Rate', 'Magnet_04_Flux', 'Magnet_04_Uncertainty', 'Magnet_04_Rate', 'Magnet_05_Flux', 'Magnet_05_Uncertainty',
-                           'Magnet_05_Rate', 'Magnet_06_Flux', 'Magnet_06_Uncertainty', 'Magnet_06_Rate', 'Magnet_07_Flux', 'Magnet_07_Uncertainty',
-                           'Magnet_07_Rate', 'Magnet_08_Flux', 'Magnet_08_Uncertainty', 'Magnet_08_Rate', 'Magnet_09_Flux', 'Magnet_09_Uncertainty',
-                           'Magnet_09_Rate', 'Magnet_10_Flux', 'Magnet_10_Uncertainty', 'Magnet_10_Rate', 'Magnet_11_Flux', 'Magnet_11_Uncertainty',
-                           'Magnet_11_Rate', 'Magnet_12_Flux', 'Magnet_12_Uncertainty', 'Magnet_12_Rate', 'Magnet_13_Flux', 'Magnet_13_Uncertainty',
-                           'Magnet_13_Rate', 'Magnet_14_Flux', 'Magnet_14_Uncertainty', 'Magnet_14_Rate', 'Magnet_15_Flux', 'Magnet_15_Uncertainty',
-                           'Magnet_15_Rate', 'Integral_00_Rate', 'Magnet_00_Rate']
+            ignore_vars = ignore_vars + ['Integral_01_Flux', 'Integral_01_Uncertainty', 'Integral_02_Flux', 'Integral_02_Uncertainty',
+                                         'Integral_03_Flux', 'Integral_03_Uncertainty', 'Integral_04_Flux', 'Integral_04_Uncertainty',
+                                         'Integral_05_Flux', 'Integral_05_Uncertainty', 'Integral_06_Flux', 'Integral_06_Uncertainty',
+                                         'Integral_07_Flux', 'Integral_07_Uncertainty', 'Integral_08_Flux', 'Integral_08_Uncertainty',
+                                         'Integral_09_Flux', 'Integral_09_Uncertainty', 'Integral_10_Flux', 'Integral_10_Uncertainty',
+                                         'Integral_11_Flux', 'Integral_11_Uncertainty', 'Integral_12_Flux', 'Integral_12_Uncertainty',
+                                         'Integral_13_Flux', 'Integral_13_Uncertainty', 'Integral_14_Flux', 'Integral_14_Uncertainty',
+                                         'Integral_15_Flux', 'Integral_15_Uncertainty', 'Magnet_01_Flux', 'Magnet_01_Uncertainty',
+                                         'Magnet_02_Flux', 'Magnet_02_Uncertainty', 'Magnet_03_Flux', 'Magnet_03_Uncertainty',
+                                         'Magnet_04_Flux', 'Magnet_04_Uncertainty', 'Magnet_05_Flux', 'Magnet_05_Uncertainty',
+                                         'Magnet_06_Flux', 'Magnet_06_Uncertainty', 'Magnet_07_Flux', 'Magnet_07_Uncertainty',
+                                         'Magnet_08_Flux', 'Magnet_08_Uncertainty', 'Magnet_09_Flux', 'Magnet_09_Uncertainty',
+                                         'Magnet_10_Flux', 'Magnet_10_Uncertainty', 'Magnet_11_Flux', 'Magnet_11_Uncertainty',
+                                         'Magnet_12_Flux', 'Magnet_12_Uncertainty', 'Magnet_13_Flux', 'Magnet_13_Uncertainty',
+                                         'Magnet_14_Flux', 'Magnet_14_Uncertainty', 'Magnet_15_Flux', 'Magnet_15_Uncertainty']
         tss = _read_cdf_mod(f, ignore_vars=ignore_vars)
         # data = tss.pop(0)
         # for ts in tss:
@@ -1519,79 +1518,79 @@ def _read_cdf_mod(fname, ignore_vars=[]):
 
         for var_key in sorted(var_keys):
             if var_key in ignore_vars:
-                pass  # TODO: or continue?
+                continue  # leave for-loop, skipping var_key
+
+            attrs = var_attrs[var_key]
+            # If this variable doesn't depend on this index, continue
+            if attrs['DEPEND_0'] != index_key:
+                continue
+
+            # Get data
+            if hasattr(cdflib, "__version__") and Version(cdflib.__version__) >= Version("1.0.0"):
+                var_last_rec = cdf.varinq(var_key).Last_Rec
             else:
-                attrs = var_attrs[var_key]
-                # If this variable doesn't depend on this index, continue
-                if attrs['DEPEND_0'] != index_key:
-                    continue
+                var_last_rec = cdf.varinq(var_key)['Last_Rec']
+            if var_last_rec == -1:
+                log.debug(f'Skipping {var_key} in {fname} as it has zero elements')
+                continue
 
-                # Get data
-                if hasattr(cdflib, "__version__") and Version(cdflib.__version__) >= Version("1.0.0"):
-                    var_last_rec = cdf.varinq(var_key).Last_Rec
-                else:
-                    var_last_rec = cdf.varinq(var_key)['Last_Rec']
-                if var_last_rec == -1:
-                    log.debug(f'Skipping {var_key} in {fname} as it has zero elements')
-                    continue
+            data = cdf.varget(var_key)
 
-                data = cdf.varget(var_key)
+            # Set fillval values to NaN
+            # It would be nice to properley mask these values to work with
+            # non-floating point (ie. int) dtypes, but this is not possible with pandas
+            if np.issubdtype(data.dtype, np.floating):
+                data[data == attrs['FILLVAL']] = np.nan
 
-                # Set fillval values to NaN
-                # It would be nice to properley mask these values to work with
-                # non-floating point (ie. int) dtypes, but this is not possible with pandas
-                if np.issubdtype(data.dtype, np.floating):
-                    data[data == attrs['FILLVAL']] = np.nan
-
-                # Get units
-                if 'UNITS' in attrs:
-                    unit_str = attrs['UNITS']
-                    try:
-                        unit = u.Unit(unit_str)
-                    except ValueError:
-                        if unit_str in _known_units:
-                            unit = _known_units[unit_str]
-                        else:
-                            warn_user(f'astropy did not recognize units of "{unit_str}". '
-                                      'Assigning dimensionless units. '
-                                      'If you think this unit should not be dimensionless, '
-                                      'please raise an issue at https://github.com/sunpy/sunpy/issues')
-                            unit = u.dimensionless_unscaled
-                else:
-                    warn_user(f'No units provided for variable "{var_key}". '
-                              'Assigning dimensionless units.')
-                    unit = u.dimensionless_unscaled
-
-                if data.ndim > 3:
-                    # Skip data with dimensions >= 3 and give user warning
-                    warn_user(f'The variable "{var_key}" has been skipped because it has more than 3 dimensions, which is unsupported.')
-                elif data.ndim == 3:
-                    # Multiple columns, give each column a unique label.
-                    # Numbering hard-corded to SolO/EPD/STEP (old) data!
-                    if var_key.startswith('Sector_'):
-                        for j in range(data.T.shape[0]):
-                            for i, col in enumerate(data.T[j, :, :]):
-                                var_key_mod = var_key.removeprefix('Sector_')
-                                var_key_mod = var_key_mod.replace('_', '_'+str(j+1).rjust(2, '0')+'_')  # j+1: numbering hard-corded to SolO/EPD/STEP (old) data!
-                                df[var_key_mod + f'_{i}'] = col
-                                units[var_key_mod + f'_{i}'] = unit
-                    elif var_key == 'RTN_Sectors' or var_key == 'RTN_Pixels':
-                        for j in range(data.T.shape[1]):
-                            for i, col in enumerate(data.T[:, j, :]):
-                                var_key_mod = var_key+'_'+str(j+1).rjust(2, '0')  # j+1: numbering hard-corded to SolO/EPD/STEP (old) data!
-                                df[var_key_mod + f'_{i}'] = col
-                                units[var_key_mod + f'_{i}'] = unit
+            # Get units
+            if 'UNITS' in attrs:
+                unit_str = attrs['UNITS']
+                try:
+                    unit = u.Unit(unit_str)
+                except ValueError:
+                    if unit_str in _known_units:
+                        unit = _known_units[unit_str]
                     else:
-                        warn_user(f'The variable "{var_key}" has been skipped because it is unsupported.')
-                elif data.ndim == 2:
-                    # Multiple columns, give each column a unique label
-                    for i, col in enumerate(data.T):
-                        df[var_key + f'_{i}'] = col
-                        units[var_key + f'_{i}'] = unit
+                        warn_user(f'astropy did not recognize units of "{unit_str}". '
+                                    'Assigning dimensionless units. '
+                                    'If you think this unit should not be dimensionless, '
+                                    'please raise an issue at https://github.com/sunpy/sunpy/issues')
+                        unit = u.dimensionless_unscaled
+            else:
+                warn_user(f'No units provided for variable "{var_key}". '
+                            'Assigning dimensionless units.')
+                unit = u.dimensionless_unscaled
+
+            if data.ndim > 3:
+                # Skip data with dimensions >= 3 and give user warning
+                warn_user(f'The variable "{var_key}" has been skipped because it has more than 3 dimensions, which is unsupported.')
+            elif data.ndim == 3:
+                # Multiple columns, give each column a unique label.
+                # Numbering hard-corded to SolO/EPD/STEP (old) data!
+                if var_key.startswith('Sector_'):
+                    for j in range(data.T.shape[0]):
+                        for i, col in enumerate(data.T[j, :, :]):
+                            var_key_mod = var_key.removeprefix('Sector_')
+                            var_key_mod = var_key_mod.replace('_', '_'+str(j+1).rjust(2, '0')+'_')  # j+1: numbering hard-corded to SolO/EPD/STEP (old) data!
+                            df[var_key_mod + f'_{i}'] = col
+                            units[var_key_mod + f'_{i}'] = unit
+                elif var_key == 'RTN_Sectors' or var_key == 'RTN_Pixels':
+                    for j in range(data.T.shape[1]):
+                        for i, col in enumerate(data.T[:, j, :]):
+                            var_key_mod = var_key+'_'+str(j+1).rjust(2, '0')  # j+1: numbering hard-corded to SolO/EPD/STEP (old) data!
+                            df[var_key_mod + f'_{i}'] = col
+                            units[var_key_mod + f'_{i}'] = unit
                 else:
-                    # Single column
-                    df[var_key] = data
-                    units[var_key] = unit
+                    warn_user(f'The variable "{var_key}" has been skipped because it is unsupported.')
+            elif data.ndim == 2:
+                # Multiple columns, give each column a unique label
+                for i, col in enumerate(data.T):
+                    df[var_key + f'_{i}'] = col
+                    units[var_key + f'_{i}'] = unit
+            else:
+                # Single column
+                df[var_key] = data
+                units[var_key] = unit
 
         all_ts.append(GenericTimeSeries(data=df, units=units, meta=meta))
 
