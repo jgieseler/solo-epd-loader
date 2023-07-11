@@ -442,7 +442,7 @@ def _autodownload_cdf(startdate, enddate, sensor, level, path):
     return
 
 
-def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=None, autodownload=False, only_averages=False, old_step_loading=True):
+def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=None, autodownload=False, only_averages=False, old_step_loading=False):
     """
     Load SolO/EPD data
 
