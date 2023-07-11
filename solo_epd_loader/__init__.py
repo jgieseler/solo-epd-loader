@@ -974,7 +974,8 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
             datadf, energies_dict = _read_new_step_cdf(filelist, only_averages)
 
     # rename index column (instead of e.g. 'EPOCH' or 'EPOCH_1')
-    datadf.index.names = ['Time']
+    if type(datadf) is pd.DataFrame:
+        datadf.index.names = ['Time']
 
     '''
     Careful if adding more species - they might have different EPOCH
