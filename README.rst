@@ -22,8 +22,8 @@ Python data loader for Solar Orbiter's (SolO) `Energetic Particle Detector (EPD)
 Current caveats:
 
 - Only the standard ``rates`` data products are supported (i.e., no ``burst`` or ``high cadence`` data).
-- Only electrons, protons and alpha particles are processed (i.e., for HET He3, He4, C, N, O, Fe are omitted at the moment).
-- For the old STEP data product (until Oct 22, 2021), the sectored data is not processed (i.e., only averaged data is supported) and electron data needs to be calculated manually.
+- For EPT and HET, only electrons, protons and alpha particles are processed (i.e., for HET He3, He4, C, N, O, Fe are omitted at the moment).
+- For STEP, electron data needs to be calculated manually.
 - The Suprathermal Ion Spectrograph (SIS) is not yet included. 
 
 Disclaimer
@@ -245,7 +245,7 @@ Example 3 - partly reproducing `Fig. 2 <https://www.aanda.org/articles/aa/full_h
 
    # plot selection of step ion channels
    for channel in [8, 17, 33]:
-      df_step['Magnet_Flux'][channel].resample(resample).mean().plot(
+      df_step[f'Magnet_Avg_Flux_{channel}'].resample(resample).mean().plot(
          ax = axs[1], logy=True, label='STEP '+energies_step["Bins_Text"][channel][0])
 
    # plot selection of ept ion channels
