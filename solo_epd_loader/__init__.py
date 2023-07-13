@@ -22,6 +22,7 @@ import cdflib
 import numpy as np
 import pandas as pd
 from astropy.io.votable import parse_single_table
+from tqdm import tqdm
 
 if hasattr(sunpy, "__version__") and Version(sunpy.__version__) >= Version("5.0.0"):
     from sunpy.io._cdf import read_cdf, _known_units
@@ -1195,7 +1196,7 @@ def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, res
     if resample:
         # for all Integral and Magnet Uncertainties:
         col_uncertainties = df.filter(like=f'_Uncertainty_').columns.tolist()
-        for delta_flux in col_uncertainties:
+        for delta_flux in tqdm(col_uncertainties):
             # overwrite x_Uncertainty with temp. variable x_Uncertainty**2 * dt**2 that is summed in the resampling
             df[delta_flux] = df[delta_flux]**2 * df['DELTA_EPOCH']**2
 
