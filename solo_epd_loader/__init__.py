@@ -470,9 +470,10 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
     level : {'l2', 'll'}, optional
         Defines level of data product: level 2 ('l2') or low-latency ('ll'). By
         default 'l2'
-    viewing : {'sun', 'asun', 'north', 'south' or None}, optional
-        Viewing direction of sensor. Required for 'ept' or 'het'; for 'step'
-        should be None. By default None
+    viewing : {'sun', 'asun', 'north', 'south', 'omni' or None}, optional
+        Viewing direction of sensor. 'omni' is just calculated as the average of
+        the other four viewing directions: ('sun'+'asun'+'north'+'south')/4
+        Required for 'ept' or 'het'; for 'step' should be None. By default None
     path : str, optional
         User-specified directory in which Solar Orbiter data is/should be
         organized; e.g. '/home/userxyz/solo/data/', by default None
@@ -554,6 +555,18 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
             df_epd_p = []
             df_epd_e = []
             energies_dict = []
+        elif viewing is 'omni':
+            all_df_epd_p = {}
+            all_df_epd_e = {}
+            for view in ['sun', 'asun', 'north', 'south']:
+                df_epd_p, df_epd_e, energies_dict = \
+                    _read_epd_cdf(sensor=sensor, viewing=view, level=level, startdate=startdate, enddate=enddate,
+                                  path=path, autodownload=autodownload)
+                all_df_epd_p[view] = df_epd_p
+                all_df_epd_e[view] = df_epd_e
+            # sum fluxes from all four sectors and divide by 4
+            df_epd_p = (all_df_epd_p['sun'] + all_df_epd_p['asun'] + all_df_epd_p['north'] + all_df_epd_p['south'])/4
+            df_epd_e = (all_df_epd_e['sun'] + all_df_epd_e['asun'] + all_df_epd_e['north'] + all_df_epd_e['south'])/4
         else:
             df_epd_p, df_epd_e, energies_dict = \
                 _read_epd_cdf(sensor=sensor, viewing=viewing, level=level, startdate=startdate, enddate=enddate,
@@ -565,7 +578,7 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None, au
     """
     INPUT:
         sensor: 'ept' or 'het' (string)
-        viewing: 'sun', 'asun', 'north', or 'south' (string)
+        viewing: 'sun', 'asun', 'north', 'south', or 'omni' (string)
         level: 'll' or 'l2' (string)
         startdate,
         enddate:    YYYYMMDD, e.g., 20210415 (integer)

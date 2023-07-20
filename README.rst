@@ -67,8 +67,8 @@ Input
 -  ``sensor``: ``'ept'``, ``'het'``, or ``'step'`` (string)
 -  ``startdate``, ``enddate``: Datetime object (e.g., ``dt.date(2021,12,31)`` or ``dt.datetime(2021,4,15)``) or integer of the form yyyymmdd with empty positions filled with zeros, e.g. ``20210415`` (if no ``enddate`` is provided, ``enddate = startdate`` will be used)
 -  ``level``: ``'l2'`` or ``'ll'`` (string); defines level of data product: level 2 (``'l2'``) or low-latency (``'ll'``). By default ``'l2'``.
--  ``viewing``: ``'sun'``, ``'asun'``, ``'north'``, ``'south'`` (string) or ``None``; not
-   needed for ``sensor = 'step'``
+-  ``viewing``: ``'sun'``, ``'asun'``, ``'north'``, ``'south'``, ``'omni'`` (string) or ``None``; not
+   needed for ``sensor = 'step'``. ``'omni'`` is just calculated as the average of the other four viewing directions: ``('sun'+'asun'+'north'+'south')/4``
 -  ``path``: directory in which Solar Orbiter data is/should be
    organized; e.g. ``'/home/userxyz/solo/data/'`` (string). See `Data folder structure`_ for more details.
 -  ``autodownload``: if ``True``, will try to download missing data files
@@ -162,7 +162,7 @@ Example 1 - low latency data
 Example code that loads low latency (ll) electron and proton (+alphas)
 fluxes (and errors) for EPT NORTH telescope from Apr 15 2021 to Apr 16
 2021 into two Pandas dataframes (one for protons & alphas, one for
-electrons). In general available are ‘sun’, ‘asun’, ‘north’, and ‘south’
+electrons). In general available are ‘sun’, ‘asun’, ‘north’, ‘south’, and ‘omni’
 viewing directions for ‘ept’ and ‘het’ telescopes of SolO/EPD.
 
 .. code:: python
