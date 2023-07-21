@@ -23,6 +23,7 @@ import cdflib
 import numpy as np
 import pandas as pd
 from astropy.io.votable import parse_single_table
+from seppy.tools import resample_df
 from tqdm import tqdm
 
 if hasattr(sunpy, "__version__") and Version(sunpy.__version__) >= Version("5.0.0"):
