@@ -23,7 +23,6 @@ import cdflib
 import numpy as np
 import pandas as pd
 from astropy.io.votable import parse_single_table
-from seppy.tools import resample_df
 from tqdm import tqdm
 
 if hasattr(sunpy, "__version__") and Version(sunpy.__version__) >= Version("5.0.0"):
@@ -1463,7 +1462,7 @@ def create_multiindex(df):
 
 def combine_channels(df, energies, en_channel, sensor):
     """
-    Average the fluxes of several adjascent energy channels of one sensor into
+    Average the fluxes of several adjacent energy channels of one sensor into
     a combined energy channel.
 
     Parameters
@@ -1473,7 +1472,7 @@ def combine_channels(df, energies, en_channel, sensor):
     energies : dict
         Energy/meta dictionary returned from epd_load (last returned object)
     en_channel : list of 2 integers
-        Range of adjascent energy channels to be used, e.g. [3, 5] for
+        Range of adjacent energy channels to be used, e.g. [3, 5] for
         combining 4th, 5th, and 6th channels (counting starts with 0).
     sensor : string
         'ept' or 'het'
@@ -1556,6 +1555,12 @@ def combine_channels(df, energies, en_channel, sensor):
 
 
 calc_av_en_flux = copy.copy(combine_channels)  # define old name of the function for compatibility
+
+
+# import here to avoid circular import with seppy
+def resample_df(df, resample, pos_timestamp='center', origin='start'):
+    from seppy.tools import resample_df
+    return resample_df(df=df, resample=resample, pos_timestamp=pos_timestamp, origin=origin)
 
 
 """
