@@ -7,6 +7,7 @@ try:
 except DistributionNotFound:
     pass  # package is not installed
 
+import copy
 import datetime as dt
 import glob
 import itertools
@@ -555,7 +556,7 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
             df_epd_p = []
             df_epd_e = []
             energies_dict = []
-        elif viewing is 'omni':
+        elif viewing == 'omni':
             all_df_epd_p = {}
             all_df_epd_e = {}
             for view in ['sun', 'asun', 'north', 'south']:
@@ -1457,6 +1458,103 @@ def create_multiindex(df):
     df = pd.DataFrame(df.values, index=df.index, columns=index)
     #  df.index.names = ['Time']
     return df
+
+
+def combine_channels(df, energies, en_channel, sensor):
+    """
+    Average the fluxes of several adjascent energy channels of one sensor into
+    a combined energy channel.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame containing electron or proton/ion data of the sensor
+    energies : dict
+        Energy/meta dictionary returned from epd_load (last returned object)
+    en_channel : list of 2 integers
+        Range of adjascent energy channels to be used, e.g. [3, 5] for
+        combining 4th, 5th, and 6th channels (counting starts with 0).
+    sensor : string
+        'ept' or 'het'
+
+    Returns
+    -------
+    pd.DataFrame
+        flux_out : contains channel-averaged flux
+    string
+        en_channel_string : describes the energry range of combined channel
+
+    Raises
+    ------
+    Exception
+        - Sensor 'step' not supported yet.
+        - Lowest EPT channels not supported because of overlapping energies.
+
+    Examples
+    --------
+    Load EPT sun viewing direction level 2 data for Aug 20 to Aug 21, 2020, and
+    combine electron channels 9 to 12 (i.e., 10th to 13th).
+
+    >>> df_p, df_e, meta = epd_load('ept', 20200820, 20200821, 'l2', 'sun')
+    >>> df_new, chan_new = combine_channels(df_p, meta, [9, 12], 'ept')
+    """
+    if sensor.lower() == 'step':
+        raise Exception('STEP data not supported yet!')
+        return pd.DataFrame(), ''
+    # if species.lower() in ['e', 'electrons']:
+    if 'Electron_Flux' in df.keys():
+        en_str = energies['Electron_Bins_Text']
+        bins_width = 'Electron_Bins_Width'
+        flux_key = 'Electron_Flux'
+    # if species.lower() in ['p', 'protons', 'i', 'ions', 'h']:
+    else:
+        if sensor.lower() == 'het':
+            en_str = energies['H_Bins_Text']
+            bins_width = 'H_Bins_Width'
+            flux_key = 'H_Flux'
+        if sensor.lower() == 'ept':
+            en_str = energies['Ion_Bins_Text']
+            bins_width = 'Ion_Bins_Width'
+            flux_key = 'Ion_Flux'
+    if type(en_channel) == list:
+        energy_low = en_str[en_channel[0]][0].split('-')[0]
+        energy_up = en_str[en_channel[-1]][0].split('-')[-1]
+        en_channel_string = energy_low + '-' + energy_up
+
+        if len(en_channel) > 2:
+            raise Exception('en_channel must have 2 elements: start channel and end channel, e.g. [1,3]!')
+        if len(en_channel) == 2:
+            # catch overlapping EPT energy channels and cancel calculation:
+            if sensor.lower() == 'ept' and 'Electron_Flux' in df.keys() and en_channel[0] < 4:
+                raise Exception('Lowest 4 EPT e channels not supported because of overlapping energies!')
+                return pd.DataFrame(), ''
+            if sensor.lower() == 'ept' and 'Electron_Flux' not in df.keys() and en_channel[0] < 9:
+                raise Exception('Lowest 9 EPT ion channels not supported because of overlapping energies!')
+                return pd.DataFrame(), ''
+            # try to convert multi-index dataframe to normal one. if this is already the case, just continue
+            try:
+                df = df[flux_key]
+            except (AttributeError, KeyError):
+                None
+            DE = energies[bins_width]
+            for bins in np.arange(en_channel[0], en_channel[-1]+1):
+                if bins == en_channel[0]:
+                    I_all = df[f'{flux_key}_{bins}'] * DE[bins]
+                else:
+                    I_all = I_all + df[f'{flux_key}_{bins}'] * DE[bins]
+            DE_total = np.sum(DE[(en_channel[0]):(en_channel[-1]+1)])
+            flux_out = pd.DataFrame({'flux': I_all/DE_total}, index=df.index)
+        else:
+            en_channel = en_channel[0]
+            flux_out = pd.DataFrame({'flux': df[flux_key][f'{flux_key}_{en_channel}']}, index=df.index)
+            en_channel_string = en_str[en_channel][0]
+    else:
+        flux_out = pd.DataFrame({'flux': df[flux_key][f'{flux_key}_{en_channel}']}, index=df.index)
+        en_channel_string = en_str[en_channel][0]
+    return flux_out, en_channel_string
+
+
+calc_av_en_flux = copy.copy(combine_channels)  # define old name of the function for compatibility
 
 
 """
