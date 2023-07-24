@@ -1,0 +1,14 @@
+astropy
+bs4
+cdflib
+datetime
+drms
+h5netcdf
+lxml
+matplotlib
+numpy
+pandas
+requests
+sunpy>=4.1.0
+tqdm
+zeep
