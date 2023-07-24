@@ -1557,10 +1557,39 @@ def combine_channels(df, energies, en_channel, sensor):
 calc_av_en_flux = copy.copy(combine_channels)  # define old name of the function for compatibility
 
 
-# import here to avoid circular import with seppy
-def resample_df(df, resample, pos_timestamp='center', origin='start'):
-    from seppy.tools import resample_df
-    return resample_df(df=df, resample=resample, pos_timestamp=pos_timestamp, origin=origin)
+def resample_df(df, resample, pos_timestamp="center", origin="start"):
+    """
+    Resamples a Pandas Dataframe or Series to a new frequency.
+
+    Parameters:
+    -----------
+    df : pd.DataFrame or pd.Series
+            The dataframe or series to resample
+    resample : str
+            pandas-compatible time string, e.g., '1min', '2H' or '25s'
+    pos_timestamp : str, default 'center'
+            Controls if the timestamp is at the center of the time bin, or at
+            the start of it
+    origin : str, default 'start'
+            Controls if the origin of resampling is at the start of the day
+            (midnight) or at the first entry of the input dataframe/series
+
+    Returns:
+    ----------
+    df : pd.DataFrame or Series, depending on the input
+    """
+    try:
+        df = df.resample(resample, origin=origin, label="left").mean()
+        if pos_timestamp == 'start':
+            df.index = df.index
+        else:
+            df.index = df.index + pd.tseries.frequencies.to_offset(pd.Timedelta(resample)/2)
+        # if pos_timestamp == 'stop' or pos_timestamp == 'end':
+        #     df.index = df.index + pd.tseries.frequencies.to_offset(pd.Timedelta(resample))
+    except ValueError:
+        raise ValueError(f"Your 'resample' option of [{resample}] doesn't seem to be a proper Pandas frequency!")
+
+    return df
 
 
 """
