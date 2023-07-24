@@ -23,15 +23,22 @@ def test_ept_l2_load_online():
     assert df_p['Ion_Flux']['Ion_Flux_4'].sum() == np.float32(61307010.0)
     # Check that fillvals are replaced by NaN
     assert np.sum(np.isnan(df_e['Electron_Flux']['Electron_Flux_1'])) == 1
-    # test combine_channels
+    # test combine_channels for ions
     df_p_new, chan_p_new = combine_channels(df=df_p, energies=meta, en_channel=[9, 12], sensor='ept')
     assert chan_p_new == '0.0809 - 0.1034 MeV'
     assert df_p_new.shape == (38809, 1)
     assert df_p_new['flux'].sum() == np.float32(28518708.0)
+    # test combine_channels for electrons
     df_e_new, chan_e_new = combine_channels(df=df_e, energies=meta, en_channel=[1, 3], sensor='het')
     assert chan_e_new == '0.0334 - 0.0420 MeV'
     assert df_e_new.shape == (38809, 1)
     assert df_e_new['flux'].sum() == np.float32(49434200.0)
+    # test resampling
+    df_p_res = resample_df(df=df_p, resample='1h')
+    assert df_p_res.shape == (11, 219)
+    assert df_p_res.index.freqstr == 'H'
+    assert df_p_res.index[0].ctime() == 'Wed Apr 20 00:30:00 2022'
+    assert df_p_res['Ion_Flux']['Ion_Flux_1'].iloc[0] == np.float32(2832.2144)
 
 
 def test_ept_l2_load_offline():
@@ -190,6 +197,3 @@ def test_step_ll_new_load_online():
     df, meta = epd_load(sensor='step', startdate=20200820, autodownload=True, level='ll')
     assert df == []
     assert meta == []
-
-
-# TODO: test resample_df()
