@@ -1,7 +1,5 @@
 astropy
-bs4
 cdflib
-datetime
 drms
 h5netcdf
 lxml
