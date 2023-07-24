@@ -517,14 +517,12 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
     Load EPD/HET sun viewing direction low-latency data for Aug 20 to Aug 22,
     2020 from user-defined directory, downloading missing files from SOAR:
 
-    >>> df_protons, df_electrons, energies = epd_load('het', 'll', 20200820,
-    ...     20200822, 'sun', None, True)
+    > df_protons, df_electrons, energies = epd_load(sensor='het', level='ll', startdate=20200820, enddate=20200822, viewing='sun', path=None, autodownload=True)
 
     Load EPD/STEP level 2 data for Aug 20 to Aug 22, 2020 from user-defined
     directory, downloading missing files from SOAR:
 
-    >>> df, energies = epd_load(sensor='step', level='l2', startdate=20200820,
-    ... enddate=20200822, autodownload=True)
+    > df, energies = epd_load(sensor='step', level='l2', startdate=20200820, enddate=20200822, autodownload=True)
     """
 
     # refuse string as date input:
@@ -920,6 +918,10 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
             warnings.warn('WARNING: No corresponding data files found! Try different settings, path or autodownload.')
             datadf = []
             energies_dict = []
+        elif level == 'll':
+            warnings.warn('WARNING: low-latency (ll) data not supported for STEP at the moment.')
+            datadf = []
+            energies_dict = []
         elif product == 'rates':
             if old_loading:
                 all_cdf = []
@@ -1031,7 +1033,8 @@ def _read_new_step_cdf(files, only_averages=False):
 
         meta['Electron_Flux_Mult'] = Electron_Flux_Mult
 
-    meta['df_rtn_desc'] = cdf.varattsget('RTN')['CATDESC']
+    if 'RTN' in cdf.cdf_info().zVariables:
+        meta['df_rtn_desc'] = cdf.varattsget('RTN')['CATDESC']
 
     del cdf
 
@@ -1495,8 +1498,8 @@ def combine_channels(df, energies, en_channel, sensor):
     Load EPT sun viewing direction level 2 data for Aug 20 to Aug 21, 2020, and
     combine electron channels 9 to 12 (i.e., 10th to 13th).
 
-    >>> df_p, df_e, meta = epd_load('ept', 20200820, 20200821, 'l2', 'sun')
-    >>> df_new, chan_new = combine_channels(df_p, meta, [9, 12], 'ept')
+    > df_p, df_e, meta = epd_load('ept', 20200820, 20200821, 'l2', 'sun')
+    > df_new, chan_new = combine_channels(df_p, meta, [9, 12], 'ept')
     """
     if sensor.lower() == 'step':
         raise Exception('STEP data not supported yet!')
