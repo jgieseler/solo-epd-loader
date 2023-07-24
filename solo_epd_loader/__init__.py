@@ -1707,7 +1707,8 @@ def _read_cdf_mod(fname, ignore_vars=[]):
                 if var_key.startswith('Sector_'):
                     for j in range(data.T.shape[0]):
                         for i, col in enumerate(data.T[j, :, :]):
-                            var_key_mod = var_key.removeprefix('Sector_')
+                            # var_key_mod = var_key.removeprefix('Sector_')
+                            var_key_mod = var_key[len('Sector_'):]  # alternative to .removeprefix() that is supported in python <3.9
                             var_key_mod = var_key_mod.replace('_', '_'+str(j+1).rjust(2, '0')+'_')  # j+1: numbering hard-corded to SolO/EPD/STEP (old) data!
                             df[var_key_mod + f'_{i}'] = col
                             units[var_key_mod + f'_{i}'] = unit
