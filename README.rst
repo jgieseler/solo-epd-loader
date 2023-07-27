@@ -1,7 +1,7 @@
 solo-epd-loader
 ===============
 
-|pypi Version| |conda version| |python version| |codecov| |license| |zenodo doi|
+|pypi Version| |conda version| |python version| |pytest| |codecov| |license| |zenodo doi|
 
 .. |pypi Version| image:: https://img.shields.io/pypi/v/solo-epd-loader?style=flat&logo=pypi
    :target: https://pypi.org/project/solo-epd-loader/
@@ -12,6 +12,7 @@ solo-epd-loader
 .. |python version| image:: https://img.shields.io/pypi/pyversions/solo-epd-loader?style=flat&logo=python
 .. |zenodo doi| image:: https://zenodo.org/badge/446889843.svg
    :target: https://zenodo.org/badge/latestdoi/446889843
+.. |pytest| image:: https://github.com/jgieseler/solo-epd-loader/workflows/pytest/badge.svg
 .. |codecov| image:: https://codecov.io/gh/jgieseler/solo-epd-loader/branch/main/graph/badge.svg?token=Z8dueEWqKS
    :target: https://codecov.io/gh/jgieseler/solo-epd-loader
 
