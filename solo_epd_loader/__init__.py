@@ -1033,7 +1033,7 @@ def _read_new_step_cdf(files, only_averages=False):
 
         meta['Electron_Flux_Mult'] = Electron_Flux_Mult
 
-    if 'RTN' in cdf.cdf_info().zVariables:
+    if 'RTN' in cdf.cdf_info()['zVariables']:
         meta['df_rtn_desc'] = cdf.varattsget('RTN')['CATDESC']
 
     del cdf
