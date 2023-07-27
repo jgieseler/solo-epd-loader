@@ -1033,7 +1033,12 @@ def _read_new_step_cdf(files, only_averages=False):
 
         meta['Electron_Flux_Mult'] = Electron_Flux_Mult
 
-    if 'RTN' in cdf.cdf_info()['zVariables']:
+    if hasattr(cdflib, "__version__") and Version(cdflib.__version__) >= Version("1.0.0"):
+        zvars = cdf.cdf_info().zVariables
+    else:
+        zvars = cdf.cdf_info()['zVariables']
+
+    if 'RTN' in zvars:
         meta['df_rtn_desc'] = cdf.varattsget('RTN')['CATDESC']
 
     del cdf
