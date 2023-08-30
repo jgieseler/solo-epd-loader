@@ -6,9 +6,7 @@ import pandas as pd
 import sunpy
 from astropy.utils.data import get_pkg_data_filename
 
-from solo_epd_loader import calc_electrons, combine_channels, create_multiindex, epd_load, resample_df
-
-# omit Pandas' PerformanceWarning
+from solo_epd_loader import calc_electrons, combine_channels, create_multiindex, epd_load, resample_df, calc_ept_corrected_e
 
 
 def test_ept_l2_load_online():
@@ -34,11 +32,17 @@ def test_ept_l2_load_online():
     assert df_e_new.shape == (38809, 1)
     assert df_e_new['flux'].sum() == np.float32(49434200.0)
     # test resampling
+    df_e_res = resample_df(df=df_e, resample='1h')
     df_p_res = resample_df(df=df_p, resample='1h')
     assert df_p_res.shape == (11, 219)
     assert df_p_res.index.freqstr == 'H'
     assert df_p_res.index[0].ctime() == 'Wed Apr 20 00:30:00 2022'
     assert df_p_res['Ion_Flux']['Ion_Flux_1'].iloc[0] == np.float32(2832.2144)
+    assert df_e_res['Electron_Flux']['Electron_Flux_1'].iloc[0] == np.float32(425.25104)
+    # test ion-contamination correction for electrons
+    df_e_corr = calc_ept_corrected_e(df_e_res, df_p_res)
+    assert df_e_corr.shape == (11, 34)
+    assert np.float32(df_e_corr['Electron_Flux_1'].iloc[0]) == np.float32(415.42606)
 
 
 def test_ept_l2_load_offline():

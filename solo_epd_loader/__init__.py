@@ -16,6 +16,7 @@ import re
 import sunpy
 import urllib.request
 import warnings
+from astropy.utils.data import get_pkg_data_filename
 from packaging.version import Version
 from pathlib import Path
 
@@ -23,7 +24,7 @@ import cdflib
 import numpy as np
 import pandas as pd
 from astropy.io.votable import parse_single_table
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 if hasattr(sunpy, "__version__") and Version(sunpy.__version__) >= Version("5.0.0"):
     from sunpy.io._cdf import read_cdf, _known_units
@@ -1598,6 +1599,35 @@ def resample_df(df, resample, pos_timestamp="center", origin="start"):
         raise ValueError(f"Your 'resample' option of [{resample}] doesn't seem to be a proper Pandas frequency!")
 
     return df
+
+
+"""
+Ion contamination correction for EPT electrons
+"""
+
+
+def calc_ept_corrected_e(df_ept_e, df_ept_p):
+    """
+    Correct EPT electron measurements for ion contamination.
+
+    Parameters:
+    -----------
+    df_ept_e : pd.DataFrame
+            Multi-index DataFrame of EPT electron measurements
+    df_ept_p : pd.DataFrame
+            Multi-index DataFrame of EPT ion measurements
+
+    Returns:
+    ----------
+    df_ept_e_corr : pd.DataFrame of corrected EPT electron measurements
+    """
+    f = get_pkg_data_filename('contamination_matrices/EPT_ion_contamination_matrix_sun.dat', package='solo_epd_loader')
+    ion_cont_corr_matrix = np.loadtxt(f)  # using the new calibration files (using the sun_matrix because they don't differ much)
+    Electron_Flux_cont = np.zeros(np.shape(df_ept_e['Electron_Flux']))*np.nan
+    for tt in tqdm(range(len(df_ept_e['Electron_Flux']))):
+        Electron_Flux_cont[tt, :] = np.sum(ion_cont_corr_matrix * np.ma.masked_invalid(df_ept_p['Ion_Flux'].values[tt, :]), axis=1)
+    df_ept_e_corr = df_ept_e['Electron_Flux'] - Electron_Flux_cont
+    return df_ept_e_corr
 
 
 """
