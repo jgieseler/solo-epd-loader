@@ -1622,7 +1622,7 @@ def calc_ept_corrected_e(df_ept_e, df_ept_p):
     df_ept_e_corr : pd.DataFrame of corrected EPT electron measurements
     """
     f = get_pkg_data_filename('contamination_matrices/EPT_ion_contamination_matrix_sun.dat', package='solo_epd_loader')
-    ion_cont_corr_matrix = np.loadtxt(f)  # using the new calibration files (using the sun_matrix because they don't differ much)
+    ion_cont_corr_matrix = np.loadtxt(f)  # using the new calibration files (using the sun matrix for all viewings because they don't differ much)
     Electron_Flux_cont = np.zeros(np.shape(df_ept_e['Electron_Flux']))*np.nan
     for tt in tqdm(range(len(df_ept_e['Electron_Flux']))):
         Electron_Flux_cont[tt, :] = np.sum(ion_cont_corr_matrix * np.ma.masked_invalid(df_ept_p['Ion_Flux'].values[tt, :]), axis=1)
