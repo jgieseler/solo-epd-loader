@@ -1191,8 +1191,8 @@ def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, res
         DataFrame containing the original STEP data read-in with epd_load
         (containing Integral_Fluxes and Magnet_Fluxes).
     meta : dict
-        Dictionary of meta data like energy information provided as second output
-        of epd_load.
+        Dictionary of meta data like energy information provided as second
+        output of epd_load.
     contamination_threshold : int or False/None, optional
         If int, mask electron data that probably is contaminated (i.e., set it
         to nan) using an integer contamination threshold following the equation:
@@ -1209,8 +1209,8 @@ def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, res
     Returns
     -------
     df : Pandas DataFrame
-        DataFrame sutrucuted as the input DataFrame, but with additional Electron columns
-        (Flux and Uncertainity) and possibly resampled.
+        DataFrame structured as the input DataFrame, but with additional
+        Electron columns (Flux and Uncertainity) and possibly resampled.
     """
     df = df.copy()
 
@@ -1628,6 +1628,73 @@ def calc_ept_corrected_e(df_ept_e, df_ept_p):
         Electron_Flux_cont[tt, :] = np.sum(ion_cont_corr_matrix * np.ma.masked_invalid(df_ept_p['Ion_Flux'].values[tt, :]), axis=1)
     df_ept_e_corr = df_ept_e['Electron_Flux'] - Electron_Flux_cont
     return df_ept_e_corr
+
+
+def combine_pixels(df, meta, pixels):
+    """
+    Average (per time step and energy) the fluxes (and uncertainties) of a list
+    of STEP pixels into a combined pixel
+
+    Parameters
+    ----------
+    df : Pandas DataFrame
+        DataFrame containing the original STEP data read-in with epd_load
+        (containing Integral_Fluxes and Magnet_Fluxes, optionally also
+        Electron_Fluxes).
+    meta : dict
+        Dictionary of meta data like energy information provided as second
+        output of epd_load.
+    pixels : list
+        List of STEP pixels to average over. Can be a list of integers or
+        strings; in the latter case, numbers below 10 need a preceeding '0'.
+        For example, [1, 9, 10] or ['01', '09', '10']
+
+    Returns
+    -------
+    df : Pandas DataFrame
+        DataFrame structured as the input DataFrame, but with additional columns
+        for combined pixels.
+
+    Raises
+    ------
+    Exception
+        - pixels to be combined not provided as a list
+
+    Examples
+    --------
+    Load STEP data for Oct 9, 2022, calculate electron data, and combine pixels
+    1, 2, and 3.
+
+    > df, meta = epd_load(sensor='step', startdate=20221009, enddate=20221009)
+    > df = calc_electrons(df=df, meta=meta)
+    > df = combine_pixels(df=df, meta=meta, pixels=[1, 2, 3])
+    """
+    if type(pixels) is not list:
+        raise Exception("'pixels' needs to be a list!")
+        return df
+    else:
+        # build list of strings from integers if not already strings:
+        if type(pixels[0]) is int:
+            for n, i in enumerate(pixels):
+                if i < 10:
+                    pixels[n] = f'0{i}'
+                else:
+                    pixels[n] = f'{i}'
+
+        # work on a copy of the DataFrame
+        df = df.copy()
+
+        # check if there is Electron data in DataFrame:
+        if sum(df.columns.str.startswith('Electron')) == 0:
+            species_all = ['Integral', 'Magnet']
+        else:
+            species_all = ['Integral', 'Magnet', 'Electron']
+        for species in species_all:
+            for quantity in ['Flux', 'Uncertainty']:
+                for chan in range(len(meta['Bins_Low_Energy'])):
+                    df[species+'_Comb_'+quantity+'_'+str(chan)] = df[[f'{species}_{pix}_{quantity}_{chan}' for pix in pixels]].mean(skipna=True, axis=1)
+                    # df.filter(regex=species+'_\d{2}_'+f'{quantity}_{chan}', axis=1).columns
+        return df
 
 
 """
