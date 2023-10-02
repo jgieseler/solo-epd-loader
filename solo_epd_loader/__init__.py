@@ -1684,6 +1684,12 @@ def combine_pixels(df, meta, pixels):
         # work on a copy of the DataFrame
         df = df.copy()
 
+        # obtain number of energy channels for pixeled data
+        try:
+            chan_no = len(meta['Sector_Bins_Low_Energy'])
+        except KeyError:
+            chan_no = len(meta['Bins_Low_Energy'])
+
         # check if there is Electron data in DataFrame:
         if sum(df.columns.str.startswith('Electron')) == 0:
             species_all = ['Integral', 'Magnet']
@@ -1691,7 +1697,7 @@ def combine_pixels(df, meta, pixels):
             species_all = ['Integral', 'Magnet', 'Electron']
         for species in species_all:
             for quantity in ['Flux', 'Uncertainty']:
-                for chan in range(len(meta['Bins_Low_Energy'])):
+                for chan in range(chan_no):
                     df[species+'_Comb_'+quantity+'_'+str(chan)] = df[[f'{species}_{pix}_{quantity}_{chan}' for pix in pixels]].mean(skipna=True, axis=1)
                     # df.filter(regex=species+'_\d{2}_'+f'{quantity}_{chan}', axis=1).columns
         return df
