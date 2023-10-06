@@ -1249,11 +1249,15 @@ def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, res
             # delta_flux_resampled = np.sqrt( delta_flux_temp / dt^2 )  # delta_flux_temp and dt are resampled sums here!
             df[delta_flux] = np.sqrt(df[delta_flux] / df['DELTA_EPOCH']**2)
 
-    # create list of electron fluxes to be calculated: only average or average + all individual pixels:
+    # create list of electron fluxes to be calculated: only average or average + all individual pixels + combined (if exists):
     if only_averages:
         pix_list = ['Avg']
     else:
-        pix_list = ['Avg']+[str(n).rjust(2, '0') for n in range(1, 16)]
+        # check for pixel-combined data obtained by combine_pixels():
+        if 'Magnet_Comb_Flux_0' in df.keys().to_list():
+            pix_list = ['Avg', 'Comb']+[str(n).rjust(2, '0') for n in range(1, 16)]
+        else:
+            pix_list = ['Avg']+[str(n).rjust(2, '0') for n in range(1, 16)]
 
     # calculate electron fluxes from Magnet and Integral Fluxes using correction factors
     # for old data, calculation needs to be separated for Avg and pixels bc. of different amount of energy channels (48 vs 8):
@@ -1262,7 +1266,8 @@ def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, res
         pix = pix_list.pop(0)
         for i in range(len(Electron_Flux_Mult['Electron_Avg_Flux_Mult'])):  # 48 energy channels for old data (for Avg)
             df = _calc_electrons_per_pixel_and_channel(df, Electron_Flux_Mult, pix, contamination_threshold, i)
-        # all pixels, without Avg:
+
+        # all pixels (also Comb if exists), without Avg:
         for i in range(len(Electron_Flux_Mult['Electron_01_Flux_Mult'])):  # 8 energy channels for old data (per pixel)
             for pix in pix_list:  # pixel 01 - 15 (00 is background pixel)
                 df = _calc_electrons_per_pixel_and_channel(df, Electron_Flux_Mult, pix, contamination_threshold, i)
@@ -1630,10 +1635,11 @@ def calc_ept_corrected_e(df_ept_e, df_ept_p):
     return df_ept_e_corr
 
 
-def combine_pixels(df, meta, pixels):
+def combine_pixels(df, meta, pixels=['02', '03', '04', '07', '08', '09', '12', '13', '14']):
     """
     Average (per time step and energy) the fluxes (and uncertainties) of a list
-    of STEP pixels into a combined pixel
+    of STEP pixels into a combined pixel. Used to compare STEP observations with
+    EPT.
 
     Parameters
     ----------
@@ -1667,7 +1673,7 @@ def combine_pixels(df, meta, pixels):
 
     > df, meta = epd_load(sensor='step', startdate=20221009, enddate=20221009)
     > df = calc_electrons(df=df, meta=meta)
-    > df = combine_pixels(df=df, meta=meta, pixels=[1, 2, 3])
+    > df = combine_pixels(df=df, meta=meta, pixels=['02', '03', '04', '07', '08', '09', '12', '13', '14'])
     """
     if type(pixels) is not list:
         raise Exception("'pixels' needs to be a list!")
@@ -1680,6 +1686,8 @@ def combine_pixels(df, meta, pixels):
                     pixels[n] = f'0{i}'
                 else:
                     pixels[n] = f'{i}'
+        # sort list of pixels:
+        pixels.sort()
 
         # work on a copy of the DataFrame
         df = df.copy()
@@ -1689,16 +1697,19 @@ def combine_pixels(df, meta, pixels):
             # obtain number of energy channels for pixeled data
             chan_no = len(meta['Sector_Bins_Low_Energy'])
 
-            # TODO: obtain weights like for new STEP data!
-            # integral_weights = 
-            # magnet_weights = 
+            # Deactivated for now (Oct 4, 2023):
+            # obtain weights for old STEP data!
+            # integral_weights =
+            # magnet_weights =
         except KeyError:
             # obtain number of energy channels for pixeled data
             chan_no = len(meta['Bins_Low_Energy'])
 
+            # Deactivated for now (Oct 4, 2023):
+            """
             # Define weights for each pixel for calulcating pixel-combinations;
             # calculated by obtaining the ratio of Rate/Flux for each
-            # combination of pixel and energy channel. For details, cf. 
+            # combination of pixel and energy channel. For details, cf.
             # https://gist.github.com/jgieseler/c09c09df8f0e165f4f8c5d452a4c9475
             integral_weights = np.array([[6.95094968e-08, 8.66443983e-08, 9.50501970e-08, 8.69677024e-08,
                                           7.17725968e-08, 7.66221007e-08, 9.14939022e-08, 9.56968051e-08,
@@ -1957,33 +1968,64 @@ def combine_pixels(df, meta, pixels):
                                         2.42687997e-06, 2.50367998e-06, 2.94912002e-06, 3.11295980e-06,
                                         2.93375979e-06, 2.48319998e-06, 2.40127974e-06, 2.82112001e-06,
                                         2.97472002e-06, 2.82112001e-06, 2.39615997e-06]])
-
+            """
         # check if there is Electron data in DataFrame:
-        # if sum(df.columns.str.startswith('Electron')) == 0:
-        #     species_all = ['Integral', 'Magnet']
-        # else:
-        #     species_all = ['Integral', 'Magnet', 'Electron']
+        if sum(df.columns.str.startswith('Electron')) == 0:
+            species_all = ['Integral', 'Magnet']
+        else:
+            species_all = ['Integral', 'Magnet', 'Electron']
 
-        # Don't use electron data here for now. They should be calculated AFTER 
+        # Deactivated for now (Oct 4, 2023):
+        """
+        # Don't use electron data here for now. They should be calculated AFTER
         # constructing pixel-combined Integral and Magnet data by using the
         # function calc_electrons()
         species_all = ['Integral', 'Magnet']
+        """
 
         for species in species_all:
-            if species == 'Integral':
-                weights = integral_weights
-            elif species == 'Magnet':
-                weights = magnet_weights
             for quantity in ['Flux', 'Uncertainty']:
                 for chan in range(chan_no):
                     # df.filter(regex=species+'_\d{2}_'+f'{quantity}_{chan}', axis=1).columns
 
-                    # just calculating the arithmetic mean of selected pixels (TODO: remove for final version):
-                    df[species+'_Comb_'+quantity+'_'+str(chan)+'_old'] = df[[f'{species}_{pix}_{quantity}_{chan}' for pix in pixels]].mean(skipna=True, axis=1)
+                    # just calculating the arithmetic mean of selected pixels:
+                    # df[species+'_Comb_'+quantity+'_'+str(chan)+'_noweights'] = df[[f'{species}_{pix}_{quantity}_{chan}' for pix in pixels]].mean(skipna=True, axis=1)
 
-                    # calculate the arithmetic mean of selected pixels, weighting each pixel by its geometric factor:
-                    l = df[[f'{species}_{pix}_{quantity}_{chan}' for pix in pixels]].keys().to_list()
-                    df[species+'_Comb_'+quantity+'_'+str(chan)] = df.apply(lambda x: np.average([x[i] for i in l], weights=weights[chan, :]), axis=1)
+                    # # calculate the weighted mean of selected pixels, weighting
+                    # # each pixel by its geometric factor:
+                    # # if species == 'Integral':
+                    #     weights = integral_weights
+                    # elif species == 'Magnet':
+                    #     weights = magnet_weights
+                    # l = df[[f'{species}_{pix}_{quantity}_{chan}' for pix in pixels]].keys().to_list()
+                    # # TODO: weights work only for ALL PIXELS the way it's written right now!
+                    # df[species+'_Comb_'+quantity+'_'+str(chan)] = \
+                    #     df.apply(lambda x: np.average([x[i] for i in l], weights=weights[chan, :]), axis=1)
+
+                    # calculate the weighted mean of selected pixels, weighting
+                    # each pixel adequately so that the combined response
+                    # approximates that of EPT
+                    selected_weights = {}
+                    selected_weights['08'] = 0.388
+                    selected_weights['03'] = 0.178
+                    selected_weights['13'] = 0.178
+                    selected_weights['07'] = 0.090
+                    selected_weights['09'] = 0.090
+                    selected_weights['02'] = 0.019
+                    selected_weights['04'] = 0.019
+                    selected_weights['12'] = 0.019
+                    selected_weights['14'] = 0.019
+
+                    try:
+                        weights = [selected_weights[pix] for pix in pixels]
+                    except KeyError:
+                        raise Exception("Outer pixels 1, 5, 6, 10, 11, 15 not supported!")
+                        return df
+
+                    l = [f'{species}_{pix}_{quantity}_{chan}' for pix in pixels]
+                    # df[species+'_Comb_'+quantity+'_'+str(chan)+'_old'] = df.apply(lambda x: np.average([x[i] for i in l], weights=weights), axis=1)
+                    # df[species+'_Comb_'+quantity+'_'+str(chan)+'_alt'] = df.apply(lambda x: np.average([x.fillna(0)[i] for i in l], weights=weights), axis=1)
+                    df[species+'_Comb_'+quantity+'_'+str(chan)] = df.apply(lambda x: np.average(np.nan_to_num([x[i] for i in l], nan=0.0, posinf=np.inf, neginf=-np.inf), weights=weights), axis=1)
         return df
 
 
