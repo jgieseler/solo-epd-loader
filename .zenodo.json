@@ -1,5 +1,6 @@
 {
     "description": "Data loader (and downloader) for Solar Orbiter/EPD energetic charged particle sensors EPT, HET, and STEP. Supports level 2 and low latency data provided by ESA's Solar Orbiter Archive. ",
+    "title": "solo-epd-loader",
     "license": "BSD-3-Clause",
     "grants": [
         {
