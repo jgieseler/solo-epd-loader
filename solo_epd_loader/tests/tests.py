@@ -35,7 +35,7 @@ def test_ept_l2_load_online():
     df_e_res = resample_df(df=df_e, resample='1h')
     df_p_res = resample_df(df=df_p, resample='1h')
     assert df_p_res.shape == (11, 219)
-    assert df_p_res.index.freqstr == 'H'
+    assert df_p_res.index.freqstr.lower() == 'h'
     assert df_p_res.index[0].ctime() == 'Wed Apr 20 00:30:00 2022'
     assert df_p_res['Ion_Flux']['Ion_Flux_1'].iloc[0] == np.float32(2832.2144)
     assert df_e_res['Electron_Flux']['Electron_Flux_1'].iloc[0] == np.float32(425.25104)
