@@ -31,6 +31,7 @@ if hasattr(sunpy, "__version__") and Version(sunpy.__version__) >= Version("5.0.
 else:
     from sunpy.io.cdf import read_cdf, _known_units
 from sunpy.timeseries import TimeSeries
+from sunpy.util.exceptions import SunpyWarning, SunpyUserWarning
 
 # omit Pandas' PerformanceWarning
 warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
@@ -78,6 +79,10 @@ ax = df_electrons.plot(logy=True, subplots=True, figsize=(20,60))
 plt.show()
 
 """
+
+
+class SoloEPDLoaderWarning(UserWarning, SunpyWarning):
+    pass
 
 
 def _check_duplicates(filelist, verbose=True):
@@ -445,7 +450,7 @@ def _autodownload_cdf(startdate, enddate, sensor, level, path):
     return
 
 
-def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=None, autodownload=False, only_averages=False, old_step_loading=False):
+def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=None, autodownload=False, only_averages=False, old_step_loading=False, pos_timestamp='center'):
     """
     Load SolO/EPD data
 
@@ -490,6 +495,11 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
         If True, will for old (i.e. before Oct 2021) STEP data loading use the
         legacy code that provides a multi-index DataFrame as output. Otherwise
         new loading functionality by sunpy will be used. By default True.
+    pos_timestamp : {str}, optional
+        Change the position of the timestamp: 'center' or 'start' of the
+        accumulation interval, or 'original' to do nothing, by default 'center'.
+        Note: Solar Orbiter/EPD CDF data has the timestamp at the 'start' of
+        the time interval.
 
     Returns
     -------
@@ -542,11 +552,18 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
         if isinstance(d, int):
             if len(str(d)) != 8:
                 raise SystemExit(f"startdate & enddate must be (datetime objects or) integers of the form YYYYMMDD, not {d}!")
+    
+    # warn when using low latency warning
+    if level.lower() == 'll':
+        warnings.warn('Low latency (ll) data is only partly supported (e.g. "pos_timestamp" is not working). Do not use for publication!', category=SoloEPDLoaderWarning, stacklevel=1)
 
     if sensor.lower() == 'step':
         datadf, energies_dict = \
             _read_step_cdf(level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload,
                            only_averages=only_averages, old_loading=old_step_loading)
+        # adjusting the position of the timestamp manually. original SolO/EPD data hast timestamp at 'start' of interval
+        if pos_timestamp == 'center' and level.lower() != 'll' and old_step_loading != True:
+            shift_index_start2center(datadf)
         return datadf, energies_dict
     if sensor.lower() == 'ept' or sensor.lower() == 'het':
         if viewing is None:
@@ -571,6 +588,10 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
             df_epd_p, df_epd_e, energies_dict = \
                 _read_epd_cdf(sensor=sensor, viewing=viewing, level=level, startdate=startdate, enddate=enddate,
                               path=path, autodownload=autodownload)
+        # adjusting the position of the timestamp manually. original SolO/EPD data hast timestamp at 'start' of interval
+        if pos_timestamp == 'center' and level.lower() != 'll':
+            shift_index_start2center(df_epd_p)
+            shift_index_start2center(df_epd_e)
         return df_epd_p, df_epd_e, energies_dict
 
 
@@ -627,7 +648,7 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None, au
     filelist = _check_duplicates(filelist, verbose=True)
 
     if len(filelist) == 0:
-        warnings.warn('WARNING: No corresponding data files found! Try different settings, path or autodownload.')
+        warnings.warn('No corresponding data files found! Try different settings, path or autodownload.', category=SoloEPDLoaderWarning, stacklevel=1)
         df_epd_p = []
         df_epd_e = []
         energies_dict = []
@@ -654,7 +675,9 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None, au
                 e_epoch = 4  # 'EPOCH_4'
 
         # load cdf files using read_cdf from sunpy (uses cdflib)
-        data = read_cdf(filelist[0])
+        with warnings.catch_warnings():
+            warnings.simplefilter(action='ignore', category=SunpyUserWarning)
+            data = read_cdf(filelist[0])
         df_p = data[0].to_dataframe()
         df_e = data[e_epoch].to_dataframe()
 
@@ -900,7 +923,7 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
     if startdate > 20211022:
         product = 'main'
     if startdate < 20211022 and enddate > 20211022:
-        warnings.warn('WARNING: During the selected time range the STEP data product changed (on Oct 22 2021)! Please adjust time range and run again.')
+        warnings.warn('During the selected time range the STEP data product changed (on Oct 22 2021)! Please adjust time range and run again.', category=SoloEPDLoaderWarning, stacklevel=1)
         datadf = []
         energies_dict = []
     else:
@@ -916,15 +939,17 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
         filelist = _check_duplicates(filelist, verbose=True)
 
         if len(filelist) == 0:
-            warnings.warn('WARNING: No corresponding data files found! Try different settings, path or autodownload.')
+            warnings.warn('No corresponding data files found! Try different settings, path or autodownload.', category=SoloEPDLoaderWarning, stacklevel=1)
             datadf = []
             energies_dict = []
         elif level == 'll':
-            warnings.warn('WARNING: low-latency (ll) data not supported for STEP at the moment.')
+            warnings.warn('Low latency (ll) data not supported for STEP at the moment.', category=SoloEPDLoaderWarning, stacklevel=1)
             datadf = []
             energies_dict = []
         elif product == 'rates':
             if old_loading:
+                warnings.warn('old_step_loading option is only intended for testing purposes. Do not use!', category=SoloEPDLoaderWarning, stacklevel=1)
+
                 all_cdf = []
                 for file in filelist:
                     all_cdf.append(cdflib.CDF(file))
@@ -1604,6 +1629,51 @@ def resample_df(df, resample, pos_timestamp="center", origin="start"):
         raise ValueError(f"Your 'resample' option of [{resample}] doesn't seem to be a proper Pandas frequency!")
 
     return df
+
+
+
+def shift_index_start2center(df, delta_epoch_name=None):
+    """
+    Move index time of DataFrame df from start of time interval to its center
+    by adding half the DELTA_EPOCH value to the index.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame for which the index should be moved
+    delta_epoch_name : str, optional
+        Manual define name of the DELTA_EPOCH column, by default None
+    """
+
+    # Make a copy of the index to work on
+    df['Time'] = df.index
+
+    if delta_epoch_name:
+        de = delta_epoch_name
+    else:
+        if df.columns.get_level_values(0).str.startswith('DELTA_EPOCH').sum() != 1:
+            print('DELTA_EPOCH name not available or not unique, aborting.')
+            return
+        else:
+            # Obtain DELTA_EPOCH column name
+            de = df.columns.get_level_values(0)[df.columns.get_level_values(0).str.startswith('DELTA_EPOCH')][0]
+
+    # Do index shifting for different cadences, two versions for normal DataFrame (STEP) or Multiindex (EPT, HET)
+    if type(df[de]) == pd.core.series.Series:
+        for cadence in df[de].unique():
+            # skip nan's. TODO: this means for NaN entries, the index stays at the start of the interval!
+            if not np.isnan(cadence):
+                # Shift index by half the cadence
+                df.loc[df[de]==cadence, 'Time'] = df.loc[df[de]==cadence, 'Time'] + pd.Timedelta(f'{cadence/2}s')
+    elif type(df[de]) == pd.core.frame.DataFrame:
+        for cadence in df[de][de].unique():
+            # skip nan's. TODO: this means for NaN entries, the index stays at the start of the interval!
+            if not np.isnan(cadence):
+                # Shift index by half the cadence
+                df.loc[df[de][de]==cadence, 'Time'] = df.loc[df[de][de]==cadence, 'Time'] + pd.Timedelta(f'{cadence/2}s')
+    
+    # Overwrite index
+    df.set_index('Time', drop=True, inplace=True)
 
 
 """

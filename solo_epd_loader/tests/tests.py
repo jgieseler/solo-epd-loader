@@ -36,7 +36,7 @@ def test_ept_l2_load_online():
     df_p_res = resample_df(df=df_p, resample='1h')
     assert df_p_res.shape == (11, 219)
     assert df_p_res.index.freqstr.lower() == 'h'
-    assert df_p_res.index[0].ctime() == 'Wed Apr 20 00:30:00 2022'
+    assert df_p_res.index[0].ctime() == 'Wed Apr 20 00:30:01 2022'
     assert df_p_res['Ion_Flux']['Ion_Flux_1'].iloc[0] == np.float32(2832.2144)
     assert df_e_res['Electron_Flux']['Electron_Flux_1'].iloc[0] == np.float32(425.25104)
     # test ion-contamination correction for electrons
@@ -78,7 +78,7 @@ def test_ept_l2_load_offline():
 
 def test_ept_ll_load_online():
     warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
-    warnings.simplefilter(action='ignore', category=sunpy.util.SunpyUserWarning)
+    # warnings.simplefilter(action='ignore', category=sunpy.util.SunpyUserWarning)
     df_p, df_e, meta = epd_load(sensor='ept', startdate=20220420, level='ll', viewing='north', autodownload=True)
     assert isinstance(df_p, pd.DataFrame)
     assert isinstance(df_e, pd.DataFrame)
@@ -116,7 +116,7 @@ def test_het_l2_load_online():
 
 def test_het_ll_load_online():
     warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
-    warnings.simplefilter(action='ignore', category=sunpy.util.SunpyUserWarning)
+    # warnings.simplefilter(action='ignore', category=sunpy.util.SunpyUserWarning)
     df_p, df_e, meta = epd_load(sensor='het', startdate=20220420, level='ll', viewing='north', autodownload=True)
     assert isinstance(df_p, pd.DataFrame)
     assert isinstance(df_e, pd.DataFrame)
