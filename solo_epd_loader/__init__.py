@@ -31,6 +31,7 @@ if hasattr(sunpy, "__version__") and Version(sunpy.__version__) >= Version("5.0.
 else:
     from sunpy.io.cdf import read_cdf, _known_units
 from sunpy.timeseries import TimeSeries
+from sunpy.util.exceptions import SunpyUserWarning
 
 # omit Pandas' PerformanceWarning
 warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
