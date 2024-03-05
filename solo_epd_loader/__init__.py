@@ -31,7 +31,6 @@ if hasattr(sunpy, "__version__") and Version(sunpy.__version__) >= Version("5.0.
 else:
     from sunpy.io.cdf import read_cdf, _known_units
 from sunpy.timeseries import TimeSeries
-from sunpy.util.exceptions import SunpyWarning, SunpyUserWarning
 
 # omit Pandas' PerformanceWarning
 warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
@@ -81,8 +80,20 @@ plt.show()
 """
 
 
-class SoloEPDLoaderWarning(UserWarning, SunpyWarning):
-    pass
+def custom_formatwarning(message, *args, **kwargs):
+    # ignore everything except the message
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = "\033[1m"
+    return BOLD+FAIL+'WARNING: '+ENDC+ str(message) + '\n'
+
+
+def custom_warning(message):
+    formatwarning_orig = warnings.formatwarning
+    warnings.formatwarning = custom_formatwarning
+    warnings.warn(message)
+    warnings.formatwarning = formatwarning_orig
+    return
 
 
 def _check_duplicates(filelist, verbose=True):
@@ -552,17 +563,17 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
         if isinstance(d, int):
             if len(str(d)) != 8:
                 raise SystemExit(f"startdate & enddate must be (datetime objects or) integers of the form YYYYMMDD, not {d}!")
-    
+
     # warn when using low latency warning
     if level.lower() == 'll':
-        warnings.warn('Low latency (ll) data is only partly supported (e.g. "pos_timestamp" is not working). Do not use for publication!', category=SoloEPDLoaderWarning, stacklevel=1)
+        custom_warning('Low latency (ll) data is only partly supported (e.g. "pos_timestamp" is not working). Do not use for publication!')
 
     if sensor.lower() == 'step':
         datadf, energies_dict = \
             _read_step_cdf(level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload,
                            only_averages=only_averages, old_loading=old_step_loading)
         # adjusting the position of the timestamp manually. original SolO/EPD data hast timestamp at 'start' of interval
-        if pos_timestamp == 'center' and level.lower() != 'll' and old_step_loading != True:
+        if pos_timestamp == 'center' and level.lower() != 'll' and old_step_loading is not True and len(datadf) > 0:
             shift_index_start2center(datadf)
         return datadf, energies_dict
     if sensor.lower() == 'ept' or sensor.lower() == 'het':
@@ -590,8 +601,10 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
                               path=path, autodownload=autodownload)
         # adjusting the position of the timestamp manually. original SolO/EPD data hast timestamp at 'start' of interval
         if pos_timestamp == 'center' and level.lower() != 'll':
-            shift_index_start2center(df_epd_p)
-            shift_index_start2center(df_epd_e)
+            if len(df_epd_p) > 0:
+                shift_index_start2center(df_epd_p)
+            if len(df_epd_e) > 0:
+                shift_index_start2center(df_epd_e)
         return df_epd_p, df_epd_e, energies_dict
 
 
@@ -648,7 +661,7 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None, au
     filelist = _check_duplicates(filelist, verbose=True)
 
     if len(filelist) == 0:
-        warnings.warn('No corresponding data files found! Try different settings, path or autodownload.', category=SoloEPDLoaderWarning, stacklevel=1)
+        custom_warning('No corresponding data files found! Try different settings, path or autodownload.')        
         df_epd_p = []
         df_epd_e = []
         energies_dict = []
@@ -923,7 +936,7 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
     if startdate > 20211022:
         product = 'main'
     if startdate < 20211022 and enddate > 20211022:
-        warnings.warn('During the selected time range the STEP data product changed (on Oct 22 2021)! Please adjust time range and run again.', category=SoloEPDLoaderWarning, stacklevel=1)
+        custom_warning('During the selected time range the STEP data product changed (on Oct 22 2021)! Please adjust time range and run again.')
         datadf = []
         energies_dict = []
     else:
@@ -939,16 +952,16 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
         filelist = _check_duplicates(filelist, verbose=True)
 
         if len(filelist) == 0:
-            warnings.warn('No corresponding data files found! Try different settings, path or autodownload.', category=SoloEPDLoaderWarning, stacklevel=1)
+            custom_warning('No corresponding data files found! Try different settings, path or autodownload.')
             datadf = []
             energies_dict = []
         elif level == 'll':
-            warnings.warn('Low latency (ll) data not supported for STEP at the moment.', category=SoloEPDLoaderWarning, stacklevel=1)
+            custom_warning('Low latency (ll) data not supported for STEP at the moment.')
             datadf = []
             energies_dict = []
         elif product == 'rates':
             if old_loading:
-                warnings.warn('old_step_loading option is only intended for testing purposes. Do not use!', category=SoloEPDLoaderWarning, stacklevel=1)
+                custom_warning('old_step_loading option is only intended for testing purposes. Do not use!')
 
                 all_cdf = []
                 for file in filelist:
