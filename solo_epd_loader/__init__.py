@@ -662,7 +662,7 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None, au
     filelist = _check_duplicates(filelist, verbose=True)
 
     if len(filelist) == 0:
-        custom_warning('No corresponding data files found! Try different settings, path or autodownload.')        
+        custom_warning('No corresponding data files found! Try different settings, path or autodownload.')
         df_epd_p = []
         df_epd_e = []
         energies_dict = []
@@ -1645,7 +1645,6 @@ def resample_df(df, resample, pos_timestamp="center", origin="start"):
     return df
 
 
-
 def shift_index_start2center(df, delta_epoch_name=None):
     """
     Move index time of DataFrame df from start of time interval to its center
@@ -1685,7 +1684,7 @@ def shift_index_start2center(df, delta_epoch_name=None):
             if not np.isnan(cadence):
                 # Shift index by half the cadence
                 df.loc[df[de][de]==cadence, 'Time'] = df.loc[df[de][de]==cadence, 'Time'] + pd.Timedelta(f'{cadence/2}s')
-    
+
     # Overwrite index
     df.set_index('Time', drop=True, inplace=True)
 
