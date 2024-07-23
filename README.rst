@@ -330,6 +330,12 @@ Example 4 - partly reproducing `Fig. 2e <https://www.aanda.org/articles/aa/full_
 **NB: This is just an approximate reproduction; e.g., the channel
 combination is a over-simplified approximation!** |image1|
 
+Contributing
+------------
+
+Contributions to this package are very much welcome and encouraged! Contributions can take the form of `issues <https://github.com/jgieseler/solo-epd-loader/issues>`_ to report bugs and request new features or `pull requests <https://github.com/jgieseler/solo-epd-loader/pulls>`_ to submit new code. 
+
+
 References
 ----------
 
