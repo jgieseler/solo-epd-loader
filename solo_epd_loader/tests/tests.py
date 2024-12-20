@@ -9,6 +9,41 @@ from astropy.utils.data import get_pkg_data_filename
 from solo_epd_loader import calc_electrons, combine_channels, create_multiindex, epd_load, resample_df, calc_ept_corrected_e
 
 
+def test_ept_l3_load_online():
+    warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
+    df, df_rtn, df_hci, energies_dict, metadata_dict = epd_load(sensor='ept', startdate=20240630, enddate=20240701, level='l3', autodownload=True, pos_timestamp='start')
+    assert isinstance(df, pd.DataFrame)
+    assert isinstance(df_rtn, pd.DataFrame)
+    assert isinstance(df_hci, pd.DataFrame)
+    assert isinstance(energies_dict, dict)
+    assert isinstance(metadata_dict, dict)
+    assert df.shape == (2880, 515)
+    assert df_rtn.shape == (2882, 12)
+    assert df_rtn.shape == (50, 3)
+    assert energies_dict['Electron_Energy_Delta_Minus'][0] == np.float32(0.0030769191)
+    assert df['Electron_Corrected_Flux_A_0'].sum() == np.float32(714048.75)
+    # Check that fillvals are replaced by NaN
+    assert np.sum(np.isnan(df['Ion_Flux_A_0'])) == np.int64(786)
+    #
+    # test combine_channels for ions
+    # df_p_new, chan_p_new = combine_channels(df=df_p, energies=meta, en_channel=[9, 12], sensor='ept')
+    # assert chan_p_new == '0.0809 - 0.1034 MeV'
+    # assert df_p_new.shape == (38809, 1)
+    # assert df_p_new['flux'].sum() == np.float32(28518708.0)
+    # # test combine_channels for electrons
+    # df_e_new, chan_e_new = combine_channels(df=df_e, energies=meta, en_channel=[1, 3], sensor='het')
+    # assert chan_e_new == '0.0334 - 0.0420 MeV'
+    # assert df_e_new.shape == (38809, 1)
+    # assert df_e_new['flux'].sum() == np.float32(49434200.0)
+    #
+    # test resampling
+    df_res = resample_df(df=df, resample='1h')
+    assert df_res.shape == (48, 515)
+    assert df_res.index.freqstr.lower() == 'h'
+    assert df_res.index[0].ctime() == 'Sun Jun 30 01:00:00 2024'
+    assert df_res['Ion_Flux_A_0'].iloc[0] == np.float32(2897.8674)
+
+
 def test_ept_l2_load_online():
     warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
     df_p, df_e, meta = epd_load(sensor='ept', startdate=20220420, viewing='asun', autodownload=True)
