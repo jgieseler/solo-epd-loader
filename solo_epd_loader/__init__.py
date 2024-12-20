@@ -169,7 +169,7 @@ def _get_epd_filelist(sensor, level, startdate, enddate, path, filenames_only=Fa
     """
     INPUT:
         sensor: 'ept' or 'het'
-        level: 'll', 'l2'
+        level: 'll', 'l2', 'l3'
         startdate, enddate: YYYYMMDD
         path: directory in which the data is located;
               e.g. '/home/userxyz/uni/solo/data/l2/epd/ept/'
@@ -185,36 +185,48 @@ def _get_epd_filelist(sensor, level, startdate, enddate, path, filenames_only=Fa
     if level == 'l2':
         l_str = 'L2'
         t_str = ''
+    if level == 'l3':
+        l_str = 'L3'
+        t_str = ''
 
-    filelist_sun = []
-    filelist_asun = []
-    filelist_north = []
-    filelist_south = []
-    for i in range(startdate, enddate+1):
-        filelist_sun = filelist_sun + \
-            glob.glob(path+'solo_'+l_str+'_epd-'+sensor+'-sun-rates_' +
-                      str(i) + t_str + '_V*.cdf')
-        filelist_asun = filelist_asun + \
-            glob.glob(path+'solo_'+l_str+'_epd-'+sensor+'-asun-rates_' +
-                      str(i) + t_str + '_V*.cdf')
-        filelist_north = filelist_north + \
-            glob.glob(path+'solo_'+l_str+'_epd-'+sensor+'-north-rates_' +
-                      str(i) + t_str + '_V*.cdf')
-        filelist_south = filelist_south + \
-            glob.glob(path+'solo_'+l_str+'_epd-'+sensor+'-south-rates_' +
-                      str(i) + t_str + '_V*.cdf')
+    if level.lower() == 'l3' and sensor.lower() == 'ept':
+        filelist = []
+        for i in range(startdate, enddate+1):
+            filelist = filelist + \
+                glob.glob(path+'solo_'+l_str+'_epd-'+sensor+'-1min_' +
+                          str(i) + t_str + '_V*.cdf')
+        if filenames_only:
+            filelist = [os.path.basename(x) for x in filelist]
+    else:
+        filelist_sun = []
+        filelist_asun = []
+        filelist_north = []
+        filelist_south = []
+        for i in range(startdate, enddate+1):
+            filelist_sun = filelist_sun + \
+                glob.glob(path+'solo_'+l_str+'_epd-'+sensor+'-sun-rates_' +
+                          str(i) + t_str + '_V*.cdf')
+            filelist_asun = filelist_asun + \
+                glob.glob(path+'solo_'+l_str+'_epd-'+sensor+'-asun-rates_' +
+                          str(i) + t_str + '_V*.cdf')
+            filelist_north = filelist_north + \
+                glob.glob(path+'solo_'+l_str+'_epd-'+sensor+'-north-rates_' +
+                          str(i) + t_str + '_V*.cdf')
+            filelist_south = filelist_south + \
+                glob.glob(path+'solo_'+l_str+'_epd-'+sensor+'-south-rates_' +
+                          str(i) + t_str + '_V*.cdf')
 
-    if filenames_only:
-        filelist_sun = [os.path.basename(x) for x in filelist_sun]
-        filelist_asun = [os.path.basename(x) for x in filelist_asun]
-        filelist_north = [os.path.basename(x) for x in filelist_north]
-        filelist_south = [os.path.basename(x) for x in filelist_south]
+        if filenames_only:
+            filelist_sun = [os.path.basename(x) for x in filelist_sun]
+            filelist_asun = [os.path.basename(x) for x in filelist_asun]
+            filelist_north = [os.path.basename(x) for x in filelist_north]
+            filelist_south = [os.path.basename(x) for x in filelist_south]
 
-    filelist = {'sun': filelist_sun,
-                'asun': filelist_asun,
-                'north': filelist_north,
-                'south': filelist_south
-                }
+        filelist = {'sun': filelist_sun,
+                    'asun': filelist_asun,
+                    'north': filelist_north,
+                    'south': filelist_south
+                    }
     return filelist
 
 
@@ -256,86 +268,62 @@ def _get_step_filelist(level, startdate, enddate, path, filenames_only=False):
     return filelist
 
 
-def _epd_ll_download(date, path, sensor, viewing=None):
+def _epd_download(date, path, sensor, viewing=None, level='l2'):
     """
-    Download EPD low latency data from http://soar.esac.esa.int/soar
+    Download EPD low latency, level 2, or level 3 data from
+    http://soar.esac.esa.int/soar
     One file/day per call.
 
-    Note: for sensor 'step' the 'viewing' parameter is necessary, but it
+    Note: for sensor 'step' and 'ept' & 'l3' the 'viewing' parameter is not necessary.
 
     Example:
-        _epd_ll_download(20210415,
-                        '/home/userxyz/solo/data/low_latency/epd/ept/',
-                        'ept', 'north')
-        _epd_ll_download(20200820,
-                        '/home/userxyz/solo/data/low_latency/epd/step/',
-                        'step')
+        _epd_download(20200820, '/home/userxyz/solo/data/l2/epd/ept/', 'ept', viewing='north', level='l2')
+        _epd_download(20200820, '/home/userxyz/solo/data/l2/epd/step/', 'step', level='l2')
+        _epd_download(20210415, '/home/userxyz/solo/data/low_latency/epd/ept/', 'ept', viewing='north', level='ll')
+        _epd_download(20200820, '/home/userxyz/solo/data/low_latency/epd/step/', 'step', level='l3')
     """
 
     # try loading tqdm for download progress display
     tqdm_available, download_url = _load_tqdm(verbose=True)
 
-    # get list of available data files, obtain corresponding start & end time
-    fl = get_available_soar_files(date, date, sensor, 'll')
-    # try:
-    if sensor.lower() == 'step':
-        stime = 'T'+fl[0].split('T')[1].split('-')[0]
-        etime = 'T'+fl[0].split('T')[2].split('_')[0]
+    if level.lower() == 'll':
+        # get list of available data files, obtain corresponding start & end time
+        fl = get_available_soar_files(date, date, sensor, 'll')
+        # try:
+        if sensor.lower() == 'step':
+            stime = 'T'+fl[0].split('T')[1].split('-')[0]
+            etime = 'T'+fl[0].split('T')[2].split('_')[0]
+            url = 'http://soar.esac.esa.int/soar-sl-tap/data?' + \
+                  'retrieval_type=LAST_PRODUCT&data_item_id=solo_LL02_epd-' + \
+                  sensor.lower()+'-rates_'+str(date) + \
+                  stime+'-'+str(date+1)+etime+'&product_type=LOW_LATENCY'
+        else:
+            stime = 'T'+fl[0].split('T')[1].split('-')[0]  # fl[0][-32:-25]
+            etime = 'T'+fl[0].split('T')[2].split('_')[0]  # fl[0][-16:-9]
+            url = 'http://soar.esac.esa.int/soar-sl-tap/data?' + \
+                  'retrieval_type=LAST_PRODUCT&data_item_id=solo_LL02_epd-' + \
+                  sensor.lower()+'-'+viewing.lower()+'-rates_'+str(date) + \
+                  stime+'-'+str(date+1)+etime+'&product_type=LOW_LATENCY'
+    if level.lower() == 'l2':
+        if sensor.lower() == 'step':
+            if date <= 20211022:
+                product = 'rates'
+            if date > 20211022:
+                product = 'main'
+            url = 'http://soar.esac.esa.int/soar-sl-tap/data?' + \
+                  'retrieval_type=LAST_PRODUCT&data_item_id=solo_L2_epd-' + \
+                  sensor.lower()+'-'+product+'_'+str(date) + \
+                  '&product_type=SCIENCE'
+        else:
+            url = 'http://soar.esac.esa.int/soar-sl-tap/data?' + \
+                  'retrieval_type=LAST_PRODUCT&data_item_id=solo_L2_epd-' + \
+                  sensor.lower()+'-'+viewing.lower()+'-rates_'+str(date) + \
+                  '&product_type=SCIENCE'
+    if level.lower() == 'l3':
         url = 'http://soar.esac.esa.int/soar-sl-tap/data?' + \
-            'retrieval_type=LAST_PRODUCT&data_item_id=solo_LL02_epd-' + \
-            sensor.lower()+'-rates_'+str(date) + \
-            stime+'-'+str(date+1)+etime+'&product_type=LOW_LATENCY'
-    else:
-        stime = 'T'+fl[0].split('T')[1].split('-')[0]  # fl[0][-32:-25]
-        etime = 'T'+fl[0].split('T')[2].split('_')[0]  # fl[0][-16:-9]
-        url = 'http://soar.esac.esa.int/soar-sl-tap/data?' + \
-            'retrieval_type=LAST_PRODUCT&data_item_id=solo_LL02_epd-' + \
-            sensor.lower()+'-'+viewing.lower()+'-rates_'+str(date) + \
-            stime+'-'+str(date+1)+etime+'&product_type=LOW_LATENCY'
-
-    # Get filename from url
-    file_name = _get_filename_url(
-        urllib.request.urlopen(url).headers['Content-Disposition'])
-
-    if tqdm_available:
-        download_url(url, path+file_name)
-    else:
-        urllib.request.urlretrieve(url, path+file_name)
-
-    return path+file_name
-
-
-def _epd_l2_download(date, path, sensor, viewing=None):
-    """
-    Download EPD level 2 data from http://soar.esac.esa.int/soar
-    One file/day per call.
-
-    Example:
-        _epd_l2_download(20200820,
-                        '/home/userxyz/solo/data/l2/epd/ept/',
-                        'ept', 'north')
-        _epd_l2_download(20200820,
-                        '/home/userxyz/solo/data/l2/epd/step/',
-                        'step')
-    """
-
-    # try loading tqdm for download progress display
-    tqdm_available, download_url = _load_tqdm(verbose=True)
-
-    if sensor.lower() == 'step':
-        if date <= 20211022:
-            product = 'rates'
-        if date > 20211022:
-            product = 'main'
-        url = 'http://soar.esac.esa.int/soar-sl-tap/data?' + \
-              'retrieval_type=LAST_PRODUCT&data_item_id=solo_L2_epd-' + \
-              sensor.lower()+'-'+product+'_'+str(date) + \
+              'retrieval_type=LAST_PRODUCT&data_item_id=solo_L3_epd-' + \
+              sensor.lower()+'-'+'1min_'+str(date) + \
               '&product_type=SCIENCE'
-    else:
-        url = 'http://soar.esac.esa.int/soar-sl-tap/data?' + \
-            'retrieval_type=LAST_PRODUCT&data_item_id=solo_L2_epd-' + \
-            sensor.lower()+'-'+viewing.lower()+'-rates_'+str(date) + \
-            '&product_type=SCIENCE'
 
     # Get filename from url
     file_name = _get_filename_url(
@@ -347,6 +335,131 @@ def _epd_l2_download(date, path, sensor, viewing=None):
         urllib.request.urlretrieve(url, path+file_name)
 
     return path+file_name
+
+
+# def _epd_ll_download(date, path, sensor, viewing=None):
+#     """
+#     Download EPD low latency data from http://soar.esac.esa.int/soar
+#     One file/day per call.
+
+#     Note: for sensor 'step' the 'viewing' parameter is necessary, but it
+
+#     Example:
+#         _epd_ll_download(20210415,
+#                         '/home/userxyz/solo/data/low_latency/epd/ept/',
+#                         'ept', 'north')
+#         _epd_ll_download(20200820,
+#                         '/home/userxyz/solo/data/low_latency/epd/step/',
+#                         'step')
+#     """
+
+#     # try loading tqdm for download progress display
+#     tqdm_available, download_url = _load_tqdm(verbose=True)
+
+#     # get list of available data files, obtain corresponding start & end time
+#     fl = get_available_soar_files(date, date, sensor, 'll')
+#     # try:
+#     if sensor.lower() == 'step':
+#         stime = 'T'+fl[0].split('T')[1].split('-')[0]
+#         etime = 'T'+fl[0].split('T')[2].split('_')[0]
+#         url = 'http://soar.esac.esa.int/soar-sl-tap/data?' + \
+#             'retrieval_type=LAST_PRODUCT&data_item_id=solo_LL02_epd-' + \
+#             sensor.lower()+'-rates_'+str(date) + \
+#             stime+'-'+str(date+1)+etime+'&product_type=LOW_LATENCY'
+#     else:
+#         stime = 'T'+fl[0].split('T')[1].split('-')[0]  # fl[0][-32:-25]
+#         etime = 'T'+fl[0].split('T')[2].split('_')[0]  # fl[0][-16:-9]
+#         url = 'http://soar.esac.esa.int/soar-sl-tap/data?' + \
+#             'retrieval_type=LAST_PRODUCT&data_item_id=solo_LL02_epd-' + \
+#             sensor.lower()+'-'+viewing.lower()+'-rates_'+str(date) + \
+#             stime+'-'+str(date+1)+etime+'&product_type=LOW_LATENCY'
+
+#     # Get filename from url
+#     file_name = _get_filename_url(
+#         urllib.request.urlopen(url).headers['Content-Disposition'])
+
+#     if tqdm_available:
+#         download_url(url, path+file_name)
+#     else:
+#         urllib.request.urlretrieve(url, path+file_name)
+
+#     return path+file_name
+
+
+# def _epd_l2_download(date, path, sensor, viewing=None):
+#     """
+#     Download EPD level 2 data from http://soar.esac.esa.int/soar
+#     One file/day per call.
+
+#     Example:
+#         _epd_l2_download(20200820,
+#                         '/home/userxyz/solo/data/l2/epd/ept/',
+#                         'ept', 'north')
+#         _epd_l2_download(20200820,
+#                         '/home/userxyz/solo/data/l2/epd/step/',
+#                         'step')
+#     """
+
+#     # try loading tqdm for download progress display
+#     tqdm_available, download_url = _load_tqdm(verbose=True)
+
+#     if sensor.lower() == 'step':
+#         if date <= 20211022:
+#             product = 'rates'
+#         if date > 20211022:
+#             product = 'main'
+#         url = 'http://soar.esac.esa.int/soar-sl-tap/data?' + \
+#               'retrieval_type=LAST_PRODUCT&data_item_id=solo_L2_epd-' + \
+#               sensor.lower()+'-'+product+'_'+str(date) + \
+#               '&product_type=SCIENCE'
+#     else:
+#         url = 'http://soar.esac.esa.int/soar-sl-tap/data?' + \
+#             'retrieval_type=LAST_PRODUCT&data_item_id=solo_L2_epd-' + \
+#             sensor.lower()+'-'+viewing.lower()+'-rates_'+str(date) + \
+#             '&product_type=SCIENCE'
+
+#     # Get filename from url
+#     file_name = _get_filename_url(
+#         urllib.request.urlopen(url).headers['Content-Disposition'])
+
+#     if tqdm_available:
+#         download_url(url, path+file_name)
+#     else:
+#         urllib.request.urlretrieve(url, path+file_name)
+
+#     return path+file_name
+
+
+# def _epd_l3_download(date, path, sensor):
+#     """
+#     Download EPD level 3 data from http://soar.esac.esa.int/soar
+#     One file/day per call.
+#     Supports only EPT L3 as of now.
+
+#     Example:
+#         _epd_l3_download(20200820,
+#                         '/home/userxyz/solo/data/l3/epd/ept/',
+#                         'ept')
+#     """
+
+#     # try loading tqdm for download progress display
+#     tqdm_available, download_url = _load_tqdm(verbose=True)
+
+#     url = 'http://soar.esac.esa.int/soar-sl-tap/data?' + \
+#         'retrieval_type=LAST_PRODUCT&data_item_id=solo_L3_epd-' + \
+#         sensor.lower()+'-'+'1min_'+str(date) + \
+#         '&product_type=SCIENCE'
+
+#     # Get filename from url
+#     file_name = _get_filename_url(
+#         urllib.request.urlopen(url).headers['Content-Disposition'])
+
+#     if tqdm_available:
+#         download_url(url, path+file_name)
+#     else:
+#         urllib.request.urlretrieve(url, path+file_name)
+
+#     return path+file_name
 
 
 def get_available_soar_files(startdate, enddate, sensor, level='l2'):
@@ -394,6 +507,8 @@ def get_available_soar_files(startdate, enddate, sensor, level='l2'):
     if level.lower() == 'll':
         p_level = 'LL02'  # "processing_level"
     #     data_type = 'v_ll_data_item'
+    if level.lower() == 'l3':
+        p_level = 'L3'  # "processing_level"
     data_type = 'v_public_files'
 
     url = "http://soar.esac.esa.int/soar-sl-tap/tap/sync?REQUEST=doQuery&" + \
@@ -426,10 +541,13 @@ def get_available_soar_files(startdate, enddate, sensor, level='l2'):
     filelist = [s for s in df['file_name'].values if sensor.lower() in s]
 
     if sensor.lower() == 'step' and startdate > 20211022:
-        # list filenames for 'main' type (i.e., remove 'hcad')
+        # filter filenames for 'main' type (i.e., remove 'hcad')
         filelist = [s for s in filelist if "main" in s]
+    elif sensor.lower() == 'ept' and level.lower() == 'l3':
+        # no filter needed because EPT L3 only has one type
+        pass
     else:
-        # list filenames for 'rates' type (i.e., remove 'hcad')
+        # filter filenames for 'rates' type (i.e., remove 'hcad')
         filelist = [s for s in filelist if "rates" in s]
 
     # filelist.sort()
@@ -453,12 +571,13 @@ def _autodownload_cdf(startdate, enddate, sensor, level, path):
                 os.makedirs(path)
             tdate = int(i.split('_')[3].split('T')[0])
             tview = i.split('-')[2]
-            if level.lower() == 'll':
-                _ = _epd_ll_download(date=tdate, path=path, sensor=sensor,
-                                     viewing=tview)
-            if level.lower() == 'l2':
-                _ = _epd_l2_download(date=tdate, path=path, sensor=sensor,
-                                     viewing=tview)
+            # if level.lower() == 'll':
+            #     _ = _epd_ll_download(date=tdate, path=path, sensor=sensor, viewing=tview)
+            # if level.lower() == 'l2':
+            #     _ = _epd_l2_download(date=tdate, path=path, sensor=sensor, viewing=tview)
+            # if level.lower() == 'l3':
+            #     _ = _epd_l3_download(date=tdate, path=path, sensor=sensor)
+            _ = _epd_download(date=tdate, path=path, sensor=sensor, viewing=tview, level=level.lower())
     return
 
 
@@ -486,9 +605,9 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
         (yyyy), month (mm) and day (dd) with empty positions filled with zeros,
         e.g. 20210415
         (if no enddate is given, 'enddate = startdate' will be set)
-    level : {'l2', 'll'}, optional
-        Defines level of data product: level 2 ('l2') or low-latency ('ll'). By
-        default 'l2'
+    level : {'l2', 'l3', 'll'}, optional
+        Defines level of data product: level 2 ('l2'), level 3 ('l3'), or
+        low-latency ('ll'). By default 'l3'
     viewing : {'sun', 'asun', 'north', 'south', 'omni' or None}, optional
         Viewing direction of sensor. 'omni' is just calculated as the average of
         the other four viewing directions: ('sun'+'asun'+'north'+'south')/4
@@ -515,13 +634,20 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
 
     Returns
     -------
-    For EPT & HET:
+    For EPT & HET (level 2 & low-latency):
         1. Pandas dataframe with proton fluxes and errors (for EPT also alpha particles) in 'particles / (s cm^2 sr MeV)'
         2. Pandas dataframe with electron fluxes and errors in 'particles / (s cm^2 sr MeV)'
         3. Dictionary with energy information for all particles:
             - String with energy channel info
             - Value of lower energy bin edge in MeV
             - Value of energy bin width in MeV
+    For EPT (level 3):
+        1. Pandas dataframe with pitch-angles as well as proton & electron (corrected and uncorrected!) fluxes and errors in 'particles / (s cm^2 sr MeV)'
+           In the column names, the numeral suffix gives the energy channel, and the 'A', 'S', 'N', or 'D' denotes the viewing, i.e., anti-sun, sun, north, or south ('down')
+        2. Pandas dataframe with particle flow direction (unit vector) in RTN coordinates for 'A', 'S', 'N', or 'D' viewing
+        3. Pandas dataframe with spacecraft position in HCI coordinates
+        4. Dictionary with energy information for all particles
+        5. Dictionary with all metadata from the CDF file
     For STEP:
         1. Pandas dataframe with fluxes and errors in 'particles / (s cm^2 sr MeV)'
         2. Dictionary with energy information for all particles:
@@ -532,20 +658,18 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
     Raises
     ------
     Exception
-        Sensors 'ept' or 'het' need a provided 'viewing' direction. If None is
-        given, Exception is raised.
+        Sensors 'ept' or 'het' need a provided 'viewing' direction (unless level 3 data is used). If None is given, Exception is raised.
 
     Examples
     --------
-    Load EPD/HET sun viewing direction low-latency data for Aug 20 to Aug 22,
-    2020 from user-defined directory, downloading missing files from SOAR:
-
+    Load EPD/HET sun viewing direction low-latency data for Aug 20 to Aug 22, 2020, downloading missing files from SOAR:
     > df_protons, df_electrons, energies = epd_load(sensor='het', level='ll', startdate=20200820, enddate=20200822, viewing='sun', path=None, autodownload=True)
 
-    Load EPD/STEP level 2 data for Aug 20 to Aug 22, 2020 from user-defined
-    directory, downloading missing files from SOAR:
-
+    Load EPD/STEP level 2 data for Aug 20 to Aug 22, 2020, downloading missing files from SOAR:
     > df, energies = epd_load(sensor='step', level='l2', startdate=20200820, enddate=20200822, autodownload=True)
+
+    Load EPD/EPT level 3 data for Jul 30 to Jul 31, 2024, to user-defined path, downloading missing files from SOAR:
+    > df, df_rtn, df_hci, energies_dict, metadata_dict = epd_load(sensor='ept', startdate=20240730, enddate=20240731, level='l3', path='/Users/xyz/data/solo/', autodownload=True)
     """
 
     # refuse string as date input:
@@ -569,44 +693,63 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
     if level.lower() == 'll':
         custom_warning('Low latency (ll) data is only partly supported (e.g. "pos_timestamp" is not working). Do not use for publication!')
 
-    if sensor.lower() == 'step':
-        datadf, energies_dict = \
-            _read_step_cdf(level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload,
-                           only_averages=only_averages, old_loading=old_step_loading)
-        # adjusting the position of the timestamp manually. original SolO/EPD data hast timestamp at 'start' of interval
-        if pos_timestamp == 'center' and level.lower() != 'll' and old_step_loading is not True and len(datadf) > 0:
-            shift_index_start2center(datadf)
-        return datadf, energies_dict
-    if sensor.lower() == 'ept' or sensor.lower() == 'het':
-        if viewing is None:
-            raise Exception("EPT and HET need a telescope 'viewing' " +
-                            "direction! No data read!")
-            df_epd_p = []
-            df_epd_e = []
-            energies_dict = []
-        elif viewing == 'omni':
-            all_df_epd_p = {}
-            all_df_epd_e = {}
-            for view in ['sun', 'asun', 'north', 'south']:
-                df_epd_p, df_epd_e, energies_dict = \
-                    _read_epd_cdf(sensor=sensor, viewing=view, level=level, startdate=startdate, enddate=enddate,
-                                  path=path, autodownload=autodownload)
-                all_df_epd_p[view] = df_epd_p
-                all_df_epd_e[view] = df_epd_e
-            # sum fluxes from all four sectors and divide by 4
-            df_epd_p = (all_df_epd_p['sun'] + all_df_epd_p['asun'] + all_df_epd_p['north'] + all_df_epd_p['south'])/4
-            df_epd_e = (all_df_epd_e['sun'] + all_df_epd_e['asun'] + all_df_epd_e['north'] + all_df_epd_e['south'])/4
+    if level.lower() == 'l3':
+        if sensor.lower() == 'ept':
+            df, df_rtn, df_hci, energies_dict, metadata_dict = _read_epd_l3_cdf(sensor=sensor.lower(),
+                                                                                startdate=startdate,
+                                                                                enddate=enddate,
+                                                                                path=path,
+                                                                                autodownload=autodownload)
+            # adjusting the position of the timestamp manually. original SolO/EPD data hast timestamp at 'start' of interval
+            if pos_timestamp == 'center':
+                custom_warning("Note that for the Dataframes containing the flow direction and SC coordinates timestamp position will not be adjusted by 'pos_timestamp'!")
+                if len(df) > 0:
+                    shift_index_start2center(df)
+                # if len(df_rtn) > 0:
+                #     shift_index_start2center(df_rtn)
+                # if len(df_hci) > 0:
+                #     shift_index_start2center(df_hci)
+            return df, df_rtn, df_hci, energies_dict, metadata_dict
         else:
-            df_epd_p, df_epd_e, energies_dict = \
-                _read_epd_cdf(sensor=sensor, viewing=viewing, level=level, startdate=startdate, enddate=enddate,
-                              path=path, autodownload=autodownload)
-        # adjusting the position of the timestamp manually. original SolO/EPD data hast timestamp at 'start' of interval
-        if pos_timestamp == 'center' and level.lower() != 'll':
-            if len(df_epd_p) > 0:
-                shift_index_start2center(df_epd_p)
-            if len(df_epd_e) > 0:
-                shift_index_start2center(df_epd_e)
-        return df_epd_p, df_epd_e, energies_dict
+            raise Exception("Level 3 data only available for EPT! No data read!")
+    else:
+        if sensor.lower() == 'step':
+            datadf, energies_dict = \
+                _read_step_cdf(level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload,
+                               only_averages=only_averages, old_loading=old_step_loading)
+            # adjusting the position of the timestamp manually. original SolO/EPD data hast timestamp at 'start' of interval
+            if pos_timestamp == 'center' and level.lower() != 'll' and old_step_loading is not True and len(datadf) > 0:
+                shift_index_start2center(datadf)
+            return datadf, energies_dict
+        if sensor.lower() == 'ept' or sensor.lower() == 'het':
+            if viewing is None:
+                raise Exception("EPT and HET need a telescope 'viewing' direction! No data read!")
+                df_epd_p = []
+                df_epd_e = []
+                energies_dict = []
+            elif viewing == 'omni':
+                all_df_epd_p = {}
+                all_df_epd_e = {}
+                for view in ['sun', 'asun', 'north', 'south']:
+                    df_epd_p, df_epd_e, energies_dict = \
+                        _read_epd_cdf(sensor=sensor, viewing=view, level=level, startdate=startdate, enddate=enddate,
+                                      path=path, autodownload=autodownload)
+                    all_df_epd_p[view] = df_epd_p
+                    all_df_epd_e[view] = df_epd_e
+                # sum fluxes from all four sectors and divide by 4
+                df_epd_p = (all_df_epd_p['sun'] + all_df_epd_p['asun'] + all_df_epd_p['north'] + all_df_epd_p['south'])/4
+                df_epd_e = (all_df_epd_e['sun'] + all_df_epd_e['asun'] + all_df_epd_e['north'] + all_df_epd_e['south'])/4
+            else:
+                df_epd_p, df_epd_e, energies_dict = \
+                    _read_epd_cdf(sensor=sensor, viewing=viewing, level=level, startdate=startdate, enddate=enddate,
+                                  path=path, autodownload=autodownload)
+            # adjusting the position of the timestamp manually. original SolO/EPD data hast timestamp at 'start' of interval
+            if pos_timestamp == 'center' and level.lower() != 'll':
+                if len(df_epd_p) > 0:
+                    shift_index_start2center(df_epd_p)
+                if len(df_epd_e) > 0:
+                    shift_index_start2center(df_epd_e)
+            return df_epd_p, df_epd_e, energies_dict
 
 
 def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None, autodownload=False):
@@ -641,6 +784,8 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None, au
         path = Path(path)/'low_latency'/'epd'/sensor.lower()
     if level.lower() == 'l2':
         path = Path(path)/'l2'/'epd'/sensor.lower()
+    if level.lower() == 'l3':
+        path = Path(path)/'l3'/'epd'/sensor.lower()
 
     # add a OS-specific '/' to end end of 'path'
     path = f'{path}{os.sep}'
@@ -655,8 +800,12 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None, au
                           path)
 
     # get list of local files for date range
-    filelist = _get_epd_filelist(sensor.lower(), level.lower(), startdate,
-                                 enddate, path=path)[viewing.lower()]
+    filelist = _get_epd_filelist(sensor.lower(), level.lower(), startdate, enddate, path=path)
+    if level.lower() == 'l3' and sensor.lower() == 'ept':
+        pass
+    else:
+        print('a')
+        filelist = filelist[viewing.lower()]
 
     # check for duplicate files with different version numbers and remove them
     filelist = _check_duplicates(filelist, verbose=True)
@@ -888,6 +1037,111 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None, au
     '''
 
     return df_epd_p, df_epd_e, energies_dict
+
+
+def _read_epd_l3_cdf(sensor, startdate, enddate=None, path=None, autodownload=False):
+    """
+    INPUT:
+        sensor: 'ept' (string)
+        startdate,
+        enddate:    YYYYMMDD, e.g., 20210415 (integer)
+                    (if no enddate is given, 'enddate = startdate' will be set)
+        path: directory in which Solar Orbiter data is/should be organized;
+              e.g. '/home/userxyz/uni/solo/data/' (string)
+        autodownload: if True will try to download missing data files from SOAR
+    RETURNS:
+        1. Pandas dataframe with pitch-angles as well as proton & electron (corrected and uncorrected!) fluxes and errors in 'particles / (s cm^2 sr MeV)'
+           In the column names, the numeral suffix gives the energy channel, and the 'A', 'S', 'N', or 'D' denotes the viewing, i.e., anti-sun, sun, north, or south ('down')
+        2. Pandas dataframe with particle flow direction (unit vector) in RTN coordinates for 'A', 'S', 'N', or 'D' viewing
+        3. Pandas dataframe with spacecraft position in HCI coordinates
+        4. Dictionary with energy information for all particles
+        5. Dictionary with all metadata from the CDF file
+    """
+
+    # if no path to data directory is given, use the current directory
+    if path is None:
+        path = os.getcwd()
+
+    # select sub-directory for corresponding sensor (only EPT as of now)
+    path = Path(path)/'l3'/'epd'/sensor.lower()
+
+    # add a OS-specific '/' to end end of 'path'
+    path = f'{path}{os.sep}'
+
+    # if no 'enddate' is given, get data only for single day of 'startdate'
+    if enddate is None:
+        enddate = startdate
+
+    # if autodownload, check online available files and download if not locally
+    if autodownload:
+        _autodownload_cdf(startdate=startdate, enddate=enddate, sensor=sensor.lower(), level='l3', path=path)
+
+    # get list of local files for date range
+    filelist = _get_epd_filelist(sensor=sensor.lower(), level='l3', startdate=startdate, enddate=enddate, path=path)
+
+    # check for duplicate files with different version numbers and remove them
+    filelist = _check_duplicates(filelist=filelist, verbose=True)
+
+    if len(filelist) == 0:
+        custom_warning('No corresponding data files found! Try different settings, path or autodownload.')
+        df = []
+        df_rtn = []
+        df_hci = []
+        energies_dict = []
+    else:
+        # load cdf files using read_cdf from sunpy (uses cdflib)
+        with warnings.catch_warnings():
+            warnings.simplefilter(action='ignore', category=SunpyUserWarning)
+            data = read_cdf(filelist[0])
+        df = data[0].to_dataframe()
+        df_rtn = data[1].to_dataframe()
+        df_hci = data[2].to_dataframe()
+
+        if len(filelist) > 1:
+            for f in filelist[1:]:
+                data = read_cdf(f)
+                t_df = data[0].to_dataframe()
+                t_df_rtn = data[1].to_dataframe()
+                t_df_hci = data[2].to_dataframe()
+                df = pd.concat([df, t_df])
+                df_rtn = pd.concat([df_rtn, t_df_rtn])
+                df_hci = pd.concat([df_hci, t_df_hci])
+
+        # directly open first cdf file with cdflib to access metadata used in the following
+        t_cdf_file = cdflib.CDF(filelist[0])
+
+        # manual replace FILLVALUES in dataframes with np.nan
+        # t_cdf_file.varattsget("Ion_Flux")["FILLVAL"][0] = -1e+31
+        # same for l2 & ll and het & ept and e, p/ion, alpha
+        # remove this (i.e. following two lines) when sunpy's read_cdf is updated,
+        # and FILLVAL will be replaced directly, see
+        # https://github.com/sunpy/sunpy/issues/5908
+        # df_epd_p = df_epd_p.replace(np.float32(-1e+31), np.nan)
+        # df_epd_e = df_epd_e.replace(np.float32(-1e+31), np.nan)
+        # 1 Mar 2023: previous 2 lines removed because they are taken care of with sunpy
+        # 4.1.0:
+        # https://docs.sunpy.org/en/stable/whatsnew/changelog.html#id7
+        # https://github.com/sunpy/sunpy/pull/5956
+
+        # dict with only the energy info
+        energies_dict = {"Ion_Energy": t_cdf_file.varget("Ion_Energy"),
+                         "Ion_Energy_Delta_Plus": t_cdf_file.varget("Ion_Energy_Delta_Plus"),
+                         "Ion_Energy_Delta_Plus": t_cdf_file.varget("Ion_Energy_Delta_Minus"),
+                         "Electron_Energy_Delta_Plus": t_cdf_file.varget("Electron_Energy_Delta_Plus"),
+                         "Electron_Energy_Delta_Minus": t_cdf_file.varget("Electron_Energy_Delta_Minus")
+                         }
+
+        # dict with all metadata info
+        metadata_dict = {"Global_Attributes": t_cdf_file.globalattsget()}
+        for key in t_cdf_file.cdf_info().zVariables:
+            metadata_dict[key] = t_cdf_file.varattsget(key)
+
+        # name index column (instead of e.g. 'EPOCH' or 'EPOCH_1')
+        df.index.names = ['Time']
+        df_rtn.index.names = ['Time']
+        df_hci.index.names = ['Time']
+
+    return df, df_rtn, df_hci, energies_dict, metadata_dict
 
 
 def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False, only_averages=False, old_loading=False):
@@ -1671,7 +1925,7 @@ def shift_index_start2center(df, delta_epoch_name=None):
             # Obtain DELTA_EPOCH column name
             de = df.columns.get_level_values(0)[df.columns.get_level_values(0).str.startswith('DELTA_EPOCH')][0]
 
-    # Do index shifting for different cadences, two versions for normal DataFrame (STEP) or Multiindex (EPT, HET)
+    # Do index shifting for different cadences, two versions for normal DataFrame (STEP, EPT L3) or Multiindex (EPT, HET)
     if type(df[de]) == pd.core.series.Series:
         for cadence in df[de].unique():
             # skip nan's. TODO: this means for NaN entries, the index stays at the start of the interval!
