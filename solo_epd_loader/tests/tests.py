@@ -19,7 +19,7 @@ def test_ept_l3_load_online():
     assert isinstance(metadata_dict, dict)
     assert df.shape == (2880, 515)
     assert df_rtn.shape == (2882, 12)
-    assert df_rtn.shape == (50, 3)
+    assert df_hci.shape == (50, 3)
     assert energies_dict['Electron_Energy_Delta_Minus'][0] == np.float32(0.0030769191)
     assert df['Electron_Corrected_Flux_A_0'].sum() == np.float32(714048.75)
     # Check that fillvals are replaced by NaN
