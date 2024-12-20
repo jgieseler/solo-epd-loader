@@ -40,7 +40,7 @@ def test_ept_l3_load_online():
     df_res = resample_df(df=df, resample='1h')
     assert df_res.shape == (48, 515)
     assert df_res.index.freqstr.lower() == 'h'
-    assert df_res.index[0].ctime() == 'Sun Jun 30 01:00:00 2024'
+    assert df_res.index[0].ctime() == 'Sun Jun 30 00:30:00 2024'
     assert df_res['Ion_Flux_A_0'].iloc[0] == np.float32(2897.8674)
 
 
