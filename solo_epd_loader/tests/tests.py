@@ -62,7 +62,7 @@ def test_ept_l2_load_online():
     assert df_p_new.shape == (38809, 1)
     assert df_p_new['flux'].sum() == np.float32(28518708.0)
     # test combine_channels for electrons
-    df_e_new, chan_e_new = combine_channels(df=df_e, energies=meta, en_channel=[1, 3], sensor='het')
+    df_e_new, chan_e_new = combine_channels(df=df_e, energies=meta, en_channel=[1, 3], sensor='ept')
     assert chan_e_new == '0.0334 - 0.0420 MeV'
     assert df_e_new.shape == (38809, 1)
     assert df_e_new['flux'].sum() == np.float32(49434200.0)
