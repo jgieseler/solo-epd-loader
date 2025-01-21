@@ -1127,7 +1127,7 @@ def _read_epd_l3_cdf(sensor, startdate, enddate=None, path=None, autodownload=Fa
         # dict with only the energy info
         energies_dict = {"Ion_Energy": t_cdf_file.varget("Ion_Energy"),
                          "Ion_Energy_Delta_Plus": t_cdf_file.varget("Ion_Energy_Delta_Plus"),
-                         "Ion_Energy_Delta_Plus": t_cdf_file.varget("Ion_Energy_Delta_Minus"),
+                         "Ion_Energy_Delta_Minus": t_cdf_file.varget("Ion_Energy_Delta_Minus"),
                          "Electron_Energy_Delta_Plus": t_cdf_file.varget("Electron_Energy_Delta_Plus"),
                          "Electron_Energy_Delta_Minus": t_cdf_file.varget("Electron_Energy_Delta_Minus")
                          }
@@ -1774,7 +1774,7 @@ def create_multiindex(df):
     return df
 
 
-def combine_channels(df, energies, en_channel, sensor):
+def combine_channels(df, energies, en_channel, sensor, viewing=None, species=None):
     """
     Average the fluxes of several adjacent energy channels of one sensor into
     a combined energy channel.
@@ -1790,6 +1790,10 @@ def combine_channels(df, energies, en_channel, sensor):
         combining 4th, 5th, and 6th channels (counting starts with 0).
     sensor : string
         'ept' or 'het'
+    viewing : string
+        Required for datsets that contain all viewings in a single dataframe, e.g., EPT level 3 (not supported yet)
+    species : string
+        Required for datsets that contain all particles in a single dataframe, e.g., EPT level 3 (not supported yet)
 
     Returns
     -------
@@ -1812,24 +1816,35 @@ def combine_channels(df, energies, en_channel, sensor):
     > df_p, df_e, meta = epd_load('ept', 20200820, 20200821, 'l2', 'sun')
     > df_new, chan_new = combine_channels(df_p, meta, [9, 12], 'ept')
     """
-    if sensor.lower() == 'step':
-        raise Exception('STEP data not supported yet!')
-        return pd.DataFrame(), ''
-    # if species.lower() in ['e', 'electrons']:
-    if 'Electron_Flux' in df.keys():
-        en_str = energies['Electron_Bins_Text']
-        bins_width = 'Electron_Bins_Width'
-        flux_key = 'Electron_Flux'
-    # if species.lower() in ['p', 'protons', 'i', 'ions', 'h']:
+    # check for EPT level 3 data product:
+    if 'Pitch_Angle_A' in df.keys():
+        raise Exception('EPT level 3 data not supported yet!')  # TODO: Add support for EPT level 3 data
+        if not species or not viewing:
+            raise Exception('EPT level 3 data require defined "species" and "viewing"!')
+        # if sensor.lower() == 'ept':
+        #     if species.lower() in ['e', 'electrons']:
+        #         pass
+        #     if species.lower() in ['p', 'protons', 'i', 'ions', 'h']:
+        #         pass
     else:
-        if sensor.lower() == 'het':
-            en_str = energies['H_Bins_Text']
-            bins_width = 'H_Bins_Width'
-            flux_key = 'H_Flux'
-        if sensor.lower() == 'ept':
-            en_str = energies['Ion_Bins_Text']
-            bins_width = 'Ion_Bins_Width'
-            flux_key = 'Ion_Flux'
+        if sensor.lower() == 'step':
+            raise Exception('STEP data not supported yet!')
+            return pd.DataFrame(), ''
+        # if species.lower() in ['e', 'electrons']:
+        if 'Electron_Flux' in df.keys():
+            en_str = energies['Electron_Bins_Text']
+            bins_width = 'Electron_Bins_Width'
+            flux_key = 'Electron_Flux'
+        # if species.lower() in ['p', 'protons', 'i', 'ions', 'h']:
+        else:
+            if sensor.lower() == 'het':
+                en_str = energies['H_Bins_Text']
+                bins_width = 'H_Bins_Width'
+                flux_key = 'H_Flux'
+            if sensor.lower() == 'ept':
+                en_str = energies['Ion_Bins_Text']
+                bins_width = 'Ion_Bins_Width'
+                flux_key = 'Ion_Flux'
     if type(en_channel) == list:
         energy_low = en_str[en_channel[0]].flat[0].split('-')[0]
         energy_up = en_str[en_channel[-1]].flat[0].split('-')[-1]
