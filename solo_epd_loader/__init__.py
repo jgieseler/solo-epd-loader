@@ -1134,7 +1134,13 @@ def _read_epd_l3_cdf(sensor, startdate, enddate=None, path=None, autodownload=Fa
 
         # dict with all metadata info
         metadata_dict = {"Global_Attributes": t_cdf_file.globalattsget()}
-        for key in t_cdf_file.cdf_info().zVariables:
+        cdf_info = t_cdf_file.cdf_info()
+        if hasattr(cdflib, "__version__") and Version(cdflib.__version__) >= Version("1.0.0"):
+            all_var_keys = cdf_info.rVariables + cdf_info.zVariables
+        else:
+            all_var_keys = cdf_info['rVariables'] + cdf_info['zVariables']
+
+        for key in all_var_keys:
             metadata_dict[key] = t_cdf_file.varattsget(key)
 
         # name index column (instead of e.g. 'EPOCH' or 'EPOCH_1')
