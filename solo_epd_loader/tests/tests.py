@@ -52,7 +52,7 @@ def test_ept_l2_load_online():
     assert isinstance(meta, dict)
     assert df_p.shape == (38809, 219)
     assert df_e.shape == (38809, 105)
-    assert meta['Electron_Bins_Text'][0][0] == '0.0312 - 0.0354 MeV'
+    assert meta['Electron_Bins_Text'].flatten()[0] == '0.0312 - 0.0354 MeV'
     assert df_p['Ion_Flux']['Ion_Flux_4'].sum() == np.float32(61307010.0)
     # Check that fillvals are replaced by NaN
     assert np.sum(np.isnan(df_e['Electron_Flux']['Electron_Flux_1'])) == 1
@@ -88,7 +88,7 @@ def test_ept_l2_load_multiple_files_online():
     assert isinstance(meta, dict)
     assert df_p.shape == (4553, 219)
     assert df_e.shape == (453, 105)
-    assert meta['Electron_Bins_Text'][0][0] == '0.0312 - 0.0354 MeV'
+    assert meta['Electron_Bins_Text'].flatten()[0] == '0.0312 - 0.0354 MeV'
     assert df_p['Ion_Flux']['Ion_Flux_4'].sum() == np.float32(452909.84)
     # Check that fillvals are replaced by NaN
     assert np.sum(np.isnan(df_e['Electron_Flux']['Electron_Flux_1'])) == 11
@@ -105,8 +105,10 @@ def test_ept_l2_load_offline():
     assert isinstance(meta, dict)
     assert df_p.shape == (1595, 219)
     assert df_e.shape == (158, 105)
-    assert meta['Electron_Bins_Text'][0][0] == '0.0312 - 0.0348 MeV'
+    assert meta['Electron_Bins_Text'].flatten()[0] == '0.0312 - 0.0348 MeV'
+    assert meta['Ion_Bins_Text'].flatten()[0] == '0.0485 - 0.0548 MeV'
     assert df_p['Ion_Flux']['Ion_Flux_4'].sum() == np.float32(177390.75)
+    assert df_e['Electron_Flux']['Electron_Flux_3'].sum() == np.float32(41474.74)
     # Check that fillvals are replaced by NaN
     assert np.sum(np.isnan(df_e['Electron_Flux']['Electron_Flux_1'])) == 2
 
@@ -120,7 +122,7 @@ def test_ept_ll_load_online():
     assert isinstance(meta, dict)
     assert df_p.shape == (749, 37)
     assert df_e.shape == (749, 17)
-    assert meta['Ele_Bins_Text'][0][0] == '0.0329 - 0.0411 MeV'
+    assert meta['Ele_Bins_Text'].flatten()[0] == '0.0329 - 0.0411 MeV'
     assert df_p['Ion_Flux']['Prot_Flux_4'].sum() == np.float32(372648.72)
     # Check that fillvals are replaced by NaN
     assert np.sum(np.isnan(df_e['Electron_Flux']['Ele_Flux_1'])) == 1
@@ -134,8 +136,10 @@ def test_het_l2_load_online():
     assert isinstance(meta, dict)
     assert df_p.shape == (7767, 111)
     assert df_e.shape == (38839, 15)
-    assert meta['Electron_Bins_Text'][0][0] == '0.4533 - 1.0380 MeV'
+    assert meta['Electron_Bins_Text'].flatten()[0] == '0.4533 - 1.0380 MeV'
+    assert meta['H_Bins_Text'].flatten()[0] == '7.0450 - 7.3540 MeV'
     assert df_p['H_Flux']['H_Flux_5'].sum() == np.float32(35.128803)
+    assert df_e['Electron_Flux']['Electron_Flux_3'].sum() == np.float32(92.06343)
     # Check that fillvals are replaced by NaN
     assert np.sum(np.isnan(df_e['Electron_Flux']['Electron_Flux_1'])) == 5
     # test combine_channels
@@ -158,7 +162,7 @@ def test_het_ll_load_online():
     assert isinstance(meta, dict)
     assert df_p.shape == (749, 25)
     assert df_e.shape == (749, 9)
-    assert meta['Ele_Bins_Text'][0][0] == '0.4533 - 1.0380 MeV'
+    assert meta['Ele_Bins_Text'].flatten()[0] == '0.4533 - 1.0380 MeV'
     assert df_p['H_Flux']['H_Flux_5'].sum() == np.float32(0.14029181)
     # Check that fillvals are replaced by NaN
     assert np.sum(np.isnan(df_e['Electron_Flux']['Ele_Flux_1'])) == 1
@@ -173,7 +177,7 @@ def test_step_l2_old_load_online():
     assert isinstance(meta, dict)
     assert df.shape == (8640, 675)
     assert df_e.shape == (8640, 1011)
-    assert meta['Electron_Avg_Bins_Text'][0][0] == '4.09 - 4.57 keV'
+    assert meta['Electron_Avg_Bins_Text'].flatten()[0] == '4.09 - 4.57 keV'
     assert df['Magnet_15_Flux_7'].sum() == np.float32(6526933.0)
     assert df_e['Magnet_15_Flux_7'].sum() == df['Magnet_15_Flux_7'].sum()
     assert df_e['Electron_11_Flux_0'].sum() == np.float32(1071644.4)
@@ -193,7 +197,7 @@ def test_step_l2_old_only_averages_resample_load_online():
     assert isinstance(meta, dict)
     assert df.shape == (8640, 195)
     assert df_e.shape == (24, 291)
-    assert meta['Electron_Avg_Bins_Text'][0][0] == '4.09 - 4.57 keV'
+    assert meta['Electron_Avg_Bins_Text'].flatten()[0] == '4.09 - 4.57 keV'
     assert df['Magnet_Avg_Flux_7'].sum() == np.float32(235159520.0)
     assert df_e['Magnet_Avg_Flux_7'].sum() == np.float32(653220.9)
     assert df_e['Electron_Avg_Flux_0'].sum() == np.float32(309272.3)
@@ -206,7 +210,7 @@ def test_step_l2_old_only_averages_load_online():
     assert isinstance(df, pd.DataFrame)
     assert isinstance(meta, dict)
     assert df.shape == (8640, 288)
-    assert meta['Bins_Text'][0][0] == '0.0057 - 0.0090 MeV/n'
+    assert meta['Bins_Text'].flatten()[0] == '0.0057 - 0.0090 MeV/n'
     assert df['Magnet_Flux'][7].sum() == np.float32(235159520.0)
     assert np.sum(np.isnan(df['Magnet_Flux'][7])) == 0
 
@@ -220,7 +224,7 @@ def test_step_l2_new_load_online():
     assert isinstance(meta, dict)
     assert df.shape == (49097, 2052)
     assert df_e.shape == (49097, 3076)
-    assert meta['Electron_Bins_Text'][0][0] == '0.0041 - 0.0046 MeV'
+    assert meta['Electron_Bins_Text'].flatten()[0] == '0.0041 - 0.0046 MeV'
     assert df['Magnet_15_Flux_7'].sum() == np.float32(544824900.0)
     assert df_e['Magnet_15_Flux_7'].sum() == df['Magnet_15_Flux_7'].sum()
     assert df_e['Electron_03_Flux_1'].sum() == np.float32(30770176.0)
@@ -236,7 +240,7 @@ def test_step_l2_new_only_averages_resample_load_online():
     assert isinstance(meta, dict)
     assert df.shape == (49097, 132)
     assert df_e.shape == (14, 196)
-    assert meta['Electron_Bins_Text'][0][0] == '0.0041 - 0.0046 MeV'
+    assert meta['Electron_Bins_Text'].flatten()[0] == '0.0041 - 0.0046 MeV'
     assert df['Magnet_Avg_Flux_7'].sum() == np.float32(1814261200.0)
     assert df_e['Magnet_Avg_Flux_7'].sum() == np.float32(509400.1)
     assert df_e['Electron_Avg_Flux_1'].sum() == np.float32(83453.23)

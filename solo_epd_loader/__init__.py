@@ -1825,8 +1825,8 @@ def combine_channels(df, energies, en_channel, sensor):
             bins_width = 'Ion_Bins_Width'
             flux_key = 'Ion_Flux'
     if type(en_channel) == list:
-        energy_low = en_str[en_channel[0]][0].split('-')[0]
-        energy_up = en_str[en_channel[-1]][0].split('-')[-1]
+        energy_low = en_str[en_channel[0]].flat[0].split('-')[0]
+        energy_up = en_str[en_channel[-1]].flat[0].split('-')[-1]
         en_channel_string = energy_low + '-' + energy_up
 
         if len(en_channel) > 2:
