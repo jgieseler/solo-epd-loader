@@ -804,7 +804,6 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None, au
     if level.lower() == 'l3' and sensor.lower() == 'ept':
         pass
     else:
-        print('a')
         filelist = filelist[viewing.lower()]
 
     # check for duplicate files with different version numbers and remove them
@@ -972,9 +971,11 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None, au
 
         if level.lower() == 'll':
             if sensor.lower() == 'het':
-                df_epd_p = pd.concat(
-                    [df_p[flux_p_channels], df_p[flux_sigma_p_channels]],
-                    axis=1, keys=['H_Flux', 'H_Uncertainty', 'QUALITY_FLAG'])
+                df_epd_p = pd.concat([df_p[flux_p_channels],
+                                      df_p[flux_sigma_p_channels],
+                                      df_p['QUALITY_FLAG']],
+                                     axis=1,
+                                     keys=['H_Flux', 'H_Uncertainty', 'QUALITY_FLAG'])
 
             if sensor.lower() == 'ept':
                 df_epd_p = pd.concat(

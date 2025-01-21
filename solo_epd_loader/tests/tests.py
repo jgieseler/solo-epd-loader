@@ -156,7 +156,7 @@ def test_het_ll_load_online():
     assert isinstance(df_p, pd.DataFrame)
     assert isinstance(df_e, pd.DataFrame)
     assert isinstance(meta, dict)
-    assert df_p.shape == (749, 24)
+    assert df_p.shape == (749, 25)
     assert df_e.shape == (749, 9)
     assert meta['Ele_Bins_Text'][0][0] == '0.4533 - 1.0380 MeV'
     assert df_p['H_Flux']['H_Flux_5'].sum() == np.float32(0.14029181)
