@@ -16,7 +16,7 @@ solo-epd-loader
 .. |codecov| image:: https://codecov.io/gh/jgieseler/solo-epd-loader/branch/main/graph/badge.svg?token=Z8dueEWqKS
    :target: https://codecov.io/gh/jgieseler/solo-epd-loader
 
-Python data loader for Solar Orbiter's (SolO) `Energetic Particle Detector (EPD) <http://espada.uah.es/epd/>`_. At the moment provides level 2 (l2) and low latency (ll) data (`more details on data levels here <http://espada.uah.es/epd/EPD_data_overview.php>`_) obtained through CDF files from ESA's `Solar Orbiter Archive (SOAR) <http://soar.esac.esa.int/soar>`_ for the following sensors:
+Python data loader for Solar Orbiter's (SolO) `Energetic Particle Detector (EPD) <http://espada.uah.es/epd/>`_. At the moment provides level 2 (l2), level 3 (l3), and low latency (ll) data (`more details on data levels here <http://espada.uah.es/epd/EPD_data_overview.php>`_) obtained through CDF files from ESA's `Solar Orbiter Archive (SOAR) <http://soar.esac.esa.int/soar>`_ for the following sensors:
 
 - Electron Proton Telescope (EPT)
 - High Energy Telescope (HET)
@@ -69,7 +69,7 @@ Input
 
 -  ``sensor``: ``'ept'``, ``'het'``, or ``'step'`` (string)
 -  ``startdate``, ``enddate``: Datetime object (e.g., ``dt.date(2021,12,31)`` or ``dt.datetime(2021,4,15)``) or integer of the form yyyymmdd with empty positions filled with zeros, e.g. ``20210415`` (if no ``enddate`` is provided, ``enddate = startdate`` will be used)
--  ``level``: ``'l2'`` or ``'ll'`` (string); defines level of data product: level 2 (``'l2'``) or low-latency (``'ll'``). By default ``'l2'``.
+-  ``level``: ``'l2'`` or ``'ll'`` (string); defines level of data product: level 2 (``'l2'``), level 3 (``'l3'``), or low-latency (``'ll'``). By default ``'l2'``.
 -  ``viewing``: ``'sun'``, ``'asun'``, ``'north'``, ``'south'``, ``'omni'`` (string) or ``None``; not
    needed for ``sensor = 'step'``. ``'omni'`` is just calculated as the average of the other four viewing directions: ``('sun'+'asun'+'north'+'south')/4``
 -  ``path``: directory in which Solar Orbiter data is/should be
@@ -115,7 +115,7 @@ Data folder structure
 The ``path`` variable provided to the module should be the base
 directory where the corresponding cdf data files should be placed in
 subdirectories. First subfolder defines the data product ``level``
-(``l2`` or ``low_latency`` at the moment), the next one the
+(``l2``, ``l3``, or ``low_latency`` at the moment), the next one the
 ``instrument`` (so far only ``epd``), and finally the ``sensor``
 (``ept``, ``het`` or ``step``).
 
