@@ -330,6 +330,40 @@ Example 4 - partly reproducing `Fig. 2e <https://www.aanda.org/articles/aa/full_
 **NB: This is just an approximate reproduction; e.g., the channel
 combination is a over-simplified approximation!** |image1|
 
+Example 5 - EPT level 3 data
+------------------------
+
+Example code that loads level 3 (l3) electron and ion fluxes (and errors) for the EPT sensor for the GLE event on Oct 28 2024.
+
+Note that for EPT level 3 data, all particle species and viewing directions are saved in a single Pandas dataframe that also includes pitch-angle distributions. 
+In addition, two additional dataframes are provided, which provide the particle flow directions (unit vector) in RTN coordinates as well as spacecraft coordinate information.
+Also, next to a dictionary providing energy information, another dictionary is returned that contains the CDF file metadata.
+See `data.serpentine-h2020.eu/l3data/solo/ <https://data.serpentine-h2020.eu/l3data/solo/>`_ for more details on the data product.
+
+.. code:: python
+
+   from matplotlib import pyplot as plt
+   from solo_epd_loader import epd_load
+
+   df, df_rtn, df_hci, energies, metadata = epd_load(sensor='ept', startdate=20211028, enddate=20211028,
+                                                     level='l3', autodownload=True, pos_timestamp='start',
+                                                     path='/home/userxyz/solo/data/')
+
+   # plot ions of south viewing (D stands for "down")
+   ax = df.filter(like='Ion_Flux_D').plot(logy=True)
+   plt.show()
+
+   # plot electrons for sun viewing
+   ax = df.filter(like='Electron_Corrected_Flux_S').plot(logy=True)
+   plt.show()
+
+   # plot pitch angles for all four viewings
+   for v in ['Pitch_Angle_A', 'Pitch_Angle_S', 'Pitch_Angle_N', 'Pitch_Angle_D']:
+      ax = df[v].plot(label=v)
+   plt.legend()
+   plt.show()
+
+
 Contributing
 ------------
 
