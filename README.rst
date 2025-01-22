@@ -331,7 +331,7 @@ Example 4 - partly reproducing `Fig. 2e <https://www.aanda.org/articles/aa/full_
 combination is a over-simplified approximation!** |image1|
 
 Example 5 - EPT level 3 data
-------------------------
+----------------------------
 
 Example code that loads level 3 (l3) electron and ion fluxes (and errors) for the EPT sensor for the GLE event on Oct 28 2024.
 
