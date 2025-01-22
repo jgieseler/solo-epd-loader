@@ -345,8 +345,9 @@ See `data.serpentine-h2020.eu/l3data/solo/ <https://data.serpentine-h2020.eu/l3d
    from matplotlib import pyplot as plt
    from solo_epd_loader import epd_load
 
-   df, df_rtn, df_hci, energies, metadata = epd_load(sensor='ept', startdate=20211028, enddate=20211028,
-                                                     level='l3', autodownload=True, pos_timestamp='start',
+   df, df_rtn, df_hci, energies, metadata = epd_load(sensor='ept', level='l3',
+                                                     startdate=20211028, enddate=20211028,
+                                                     autodownload=True, pos_timestamp='start',
                                                      path='/home/userxyz/solo/data/')
 
    # plot ions of south viewing (D stands for "down")
