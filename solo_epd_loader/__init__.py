@@ -1128,9 +1128,30 @@ def _read_epd_l3_cdf(sensor, startdate, enddate=None, path=None, autodownload=Fa
         energies_dict = {"Ion_Energy": t_cdf_file.varget("Ion_Energy"),
                          "Ion_Energy_Delta_Plus": t_cdf_file.varget("Ion_Energy_Delta_Plus"),
                          "Ion_Energy_Delta_Minus": t_cdf_file.varget("Ion_Energy_Delta_Minus"),
+                         "Electron_Energy": t_cdf_file.varget("Electron_Energy"),
                          "Electron_Energy_Delta_Plus": t_cdf_file.varget("Electron_Energy_Delta_Plus"),
                          "Electron_Energy_Delta_Minus": t_cdf_file.varget("Electron_Energy_Delta_Minus")
                          }
+        
+        # build energy channel strings
+        Ion_Bins_Text = []
+        for i in range(len(energies_dict['Ion_Energy'])):
+            Ion_Bins_Text.append(f"{np.format_float_positional(energies_dict['Ion_Energy'][i]-energies_dict['Ion_Energy_Delta_Minus'][i], 4)} - {np.format_float_positional(energies_dict['Ion_Energy'][i]+energies_dict['Ion_Energy_Delta_Plus'][i], 4)} MeV")
+        energies_dict['Ion_Bins_Text'] = np.array(Ion_Bins_Text)
+        #
+        Electron_Bins_Text = []
+        for i in range(len(energies_dict['Electron_Energy'])):
+            Electron_Bins_Text.append(f"{np.format_float_positional(energies_dict['Electron_Energy'][i]-energies_dict['Electron_Energy_Delta_Minus'][i], 4)} - {np.format_float_positional(energies_dict['Electron_Energy'][i]+energies_dict['Electron_Energy_Delta_Plus'][i], 4)} MeV")
+        energies_dict['Electron_Bins_Text'] = np.array(Electron_Bins_Text)
+
+        # build energy channel widths
+        energies_dict['Ion_Bins_Width'] = np.copy(energies_dict['Ion_Energy_Delta_Minus'])
+        for i in range(len(energies_dict['Ion_Energy'])):
+            energies_dict['Ion_Bins_Width'][i] = energies_dict['Ion_Energy_Delta_Minus'][i]+energies_dict['Ion_Energy_Delta_Plus'][i]
+        #
+        energies_dict['Electron_Bins_Width'] = np.copy(energies_dict['Electron_Energy_Delta_Minus'])
+        for i in range(len(energies_dict['Electron_Energy'])):
+            energies_dict['Electron_Bins_Width'][i] = energies_dict['Electron_Energy_Delta_Minus'][i]+energies_dict['Electron_Energy_Delta_Plus'][i]
 
         # dict with all metadata info
         metadata_dict = {"Global_Attributes": t_cdf_file.globalattsget()}
