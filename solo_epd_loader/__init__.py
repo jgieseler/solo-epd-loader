@@ -1837,35 +1837,48 @@ def combine_channels(df, energies, en_channel, sensor, viewing=None, species=Non
     > df_p, df_e, meta = epd_load('ept', 20200820, 20200821, 'l2', 'sun')
     > df_new, chan_new = combine_channels(df_p, meta, [9, 12], 'ept')
     """
-    # check for EPT level 3 data product:
-    if 'Pitch_Angle_A' in df.keys():
-        raise Exception('EPT level 3 data not supported yet!')  # TODO: Add support for EPT level 3 data
-        if not species or not viewing:
-            raise Exception('EPT level 3 data require defined "species" and "viewing"!')
-        # if sensor.lower() == 'ept':
-        #     if species.lower() in ['e', 'electrons']:
-        #         pass
-        #     if species.lower() in ['p', 'protons', 'i', 'ions', 'h']:
-        #         pass
-    else:
-        if sensor.lower() == 'step':
-            raise Exception('STEP data not supported yet!')
-            return pd.DataFrame(), ''
-        # if species.lower() in ['e', 'electrons']:
+    if sensor.lower() == 'step':
+        raise Exception('STEP data not supported yet!')
+        return pd.DataFrame(), ''
+
+    # for l2 EPT and HET data derive species from dataframe (they are separated)
+    if not species and 'Pitch_Angle_A' not in df.keys():
         if 'Electron_Flux' in df.keys():
-            en_str = energies['Electron_Bins_Text']
-            bins_width = 'Electron_Bins_Width'
-            flux_key = 'Electron_Flux'
-        # if species.lower() in ['p', 'protons', 'i', 'ions', 'h']:
+            species = 'e'
         else:
-            if sensor.lower() == 'het':
-                en_str = energies['H_Bins_Text']
-                bins_width = 'H_Bins_Width'
-                flux_key = 'H_Flux'
-            if sensor.lower() == 'ept':
-                en_str = energies['Ion_Bins_Text']
-                bins_width = 'Ion_Bins_Width'
-                flux_key = 'Ion_Flux'
+            species = 'p'
+
+    # for EPT l3 data
+    if 'Pitch_Angle_A' in df.keys():
+        if not species:
+            raise Exception("EPT level 3 data requires 'species' option!")
+        if not viewing:
+            raise Exception("EPT level 3 data requires 'viewing' option!")
+        else: 
+            viewing = viewing.lower().replace('-', '')
+            viewing = viewing.replace('asun', 'antisun')
+            viewing_short = {'sun': 'S',
+                             'antisun': 'A',
+                             'north': 'N',
+                             'south': 'D'}
+
+    if species.lower() in ['e', 'electrons']:
+        en_str = energies['Electron_Bins_Text']
+        bins_width = 'Electron_Bins_Width'
+        flux_key = 'Electron_Flux'
+        if 'Pitch_Angle_A' in df.keys():
+            flux_key = f'Electron_Corrected_Flux_{viewing_short[viewing]}'
+    elif species.lower() in ['p', 'protons', 'i', 'ions', 'h']:
+        if sensor.lower() == 'het':
+            en_str = energies['H_Bins_Text']
+            bins_width = 'H_Bins_Width'
+            flux_key = 'H_Flux'
+        if sensor.lower() == 'ept':
+            en_str = energies['Ion_Bins_Text']
+            bins_width = 'Ion_Bins_Width'
+            flux_key = 'Ion_Flux'
+            if 'Pitch_Angle_A' in df.keys():
+                flux_key = f'Ion_Flux_{viewing_short[viewing]}'
     if type(en_channel) == list:
         energy_low = en_str[en_channel[0]].flat[0].split('-')[0]
         energy_up = en_str[en_channel[-1]].flat[0].split('-')[-1]
@@ -1874,12 +1887,19 @@ def combine_channels(df, energies, en_channel, sensor, viewing=None, species=Non
         if len(en_channel) > 2:
             raise Exception('en_channel must have 2 elements: start channel and end channel, e.g. [1,3]!')
         if len(en_channel) == 2:
-            # catch overlapping EPT energy channels and cancel calculation:
-            if sensor.lower() == 'ept' and 'Electron_Flux' in df.keys() and en_channel[0] < 4:
+            # catch overlapping EPT L2 energy channels and cancel calculation:
+            if sensor.lower() == 'ept' and species == 'e' and en_channel[0] < 4 and 'Pitch_Angle_A' not in df.keys():
                 raise Exception('Lowest 4 EPT e channels not supported because of overlapping energies!')
                 return pd.DataFrame(), ''
-            if sensor.lower() == 'ept' and 'Electron_Flux' not in df.keys() and en_channel[0] < 9:
+            if sensor.lower() == 'ept' and species == 'p' and en_channel[0] < 9 and 'Pitch_Angle_A' not in df.keys():
                 raise Exception('Lowest 9 EPT ion channels not supported because of overlapping energies!')
+                return pd.DataFrame(), ''
+            # catch overlapping EPT L3 energy channels and cancel calculation:
+            if sensor.lower() == 'ept' and species == 'e' and en_channel[0] < 1 and 'Pitch_Angle_A' in df.keys():
+                raise Exception('Lowest EPT e channel not supported because of overlapping energies!')
+                return pd.DataFrame(), ''
+            if sensor.lower() == 'ept' and species == 'p' and en_channel[0] < 3 and 'Pitch_Angle_A' in df.keys():
+                raise Exception('Lowest 3 EPT ion channels not supported because of overlapping energies!')
                 return pd.DataFrame(), ''
             # try to convert multi-index dataframe to normal one. if this is already the case, just continue
             try:
@@ -1896,11 +1916,17 @@ def combine_channels(df, energies, en_channel, sensor, viewing=None, species=Non
             flux_out = pd.DataFrame({'flux': I_all/DE_total}, index=df.index)
         else:
             en_channel = en_channel[0]
-            flux_out = pd.DataFrame({'flux': df[flux_key][f'{flux_key}_{en_channel}']}, index=df.index)
-            en_channel_string = en_str[en_channel][0]
+            if 'Pitch_Angle_A' not in df.keys():
+                flux_out = pd.DataFrame({'flux': df[flux_key][f'{flux_key}_{en_channel}']}, index=df.index)
+            else:
+                flux_out = pd.DataFrame({'flux': df[f'{flux_key}_{en_channel}']}, index=df.index)
+            en_channel_string = en_str[en_channel]
     else:
-        flux_out = pd.DataFrame({'flux': df[flux_key][f'{flux_key}_{en_channel}']}, index=df.index)
-        en_channel_string = en_str[en_channel][0]
+        if 'Pitch_Angle_A' not in df.keys():
+            flux_out = pd.DataFrame({'flux': df[flux_key][f'{flux_key}_{en_channel}']}, index=df.index)
+        else:
+            flux_out = pd.DataFrame({'flux': df[f'{flux_key}_{en_channel}']}, index=df.index)
+        en_channel_string = en_str[en_channel]
     return flux_out, en_channel_string
 
 

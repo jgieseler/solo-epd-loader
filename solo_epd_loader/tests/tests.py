@@ -26,15 +26,22 @@ def test_ept_l3_load_online():
     assert np.sum(np.isnan(df['Ion_Flux_A_0'])) == np.int64(786)
     #
     # test combine_channels for ions
-    # df_p_new, chan_p_new = combine_channels(df=df_p, energies=meta, en_channel=[9, 12], sensor='ept')
-    # assert chan_p_new == '0.0809 - 0.1034 MeV'
-    # assert df_p_new.shape == (38809, 1)
-    # assert df_p_new['flux'].sum() == np.float32(28518708.0)
-    # # test combine_channels for electrons
-    # df_e_new, chan_e_new = combine_channels(df=df_e, energies=meta, en_channel=[4, 7], sensor='ept')
-    # assert chan_e_new == '0.0334 - 0.0420 MeV'
-    # assert df_e_new.shape == (38809, 1)
-    # assert df_e_new['flux'].sum() == np.float32(49434200.0)
+    df_p_new, chan_p_new = combine_channels(df=df, energies=energies_dict, en_channel=[9, 12], sensor='ept', viewing='asun', species='p')
+    assert chan_p_new == '0.1628 - 0.2980 MeV'
+    assert df_p_new.shape == (2880, 1)
+    assert df_p_new['flux'].sum() == np.float32(313939.88)
+    # test combine_channels for electrons
+    df_e_new, chan_e_new = combine_channels(df=df, energies=energies_dict, en_channel=[9, 12], sensor='ept', viewing='South', species='e')
+    assert chan_e_new == '0.1432 - 0.2826 MeV'
+    assert df_e_new.shape == (2880, 1)
+    assert df_e_new['flux'].sum() == np.float32(12301.297)
+    df_e_new, chan_e_new = combine_channels(df=df, energies=energies_dict, en_channel=[12], sensor='ept', viewing='South', species='e')
+    assert chan_e_new == '0.2379 - 0.2826 MeV'
+    assert df_e_new.shape == (2880, 1)
+    assert df_e_new['flux'].sum() == np.float32(7876.287)
+    df_e_new2, chan_e_new2 = combine_channels(df=df, energies=energies_dict, en_channel=12, sensor='ept', viewing='South', species='e')
+    assert df_e_new2.equals(df_e_new)
+    assert chan_e_new2 == chan_e_new
     #
     # test resampling
     df_res = resample_df(df=df, resample='1h')
@@ -61,6 +68,14 @@ def test_ept_l2_load_online():
     assert chan_p_new == '0.0809 - 0.1034 MeV'
     assert df_p_new.shape == (38809, 1)
     assert df_p_new['flux'].sum() == np.float32(28518708.0)
+    #
+    df_p_new, chan_p_new = combine_channels(df=df_p, energies=meta, en_channel=[1], sensor='ept')
+    assert chan_p_new == '0.0520 - 0.0602 MeV'
+    assert df_p_new.shape == (38809, 1)
+    assert df_p_new['flux'].sum() == np.float32(85663600.0)
+    df_p_new2, chan_p_new2 = combine_channels(df=df_p, energies=meta, en_channel=1, sensor='ept')
+    assert df_p_new2.equals(df_p_new)
+    assert chan_p_new2 == chan_p_new
     # test combine_channels for electrons
     df_e_new, chan_e_new = combine_channels(df=df_e, energies=meta, en_channel=[4, 7], sensor='ept')
     assert chan_e_new == '0.0408 - 0.0542 MeV'
@@ -147,6 +162,15 @@ def test_het_l2_load_online():
     assert chan_p_new == '11.8000 - 15.6500 MeV'
     assert df_p_new.shape == (7767, 1)
     assert df_p_new['flux'].sum() == np.float32(3.106687)
+    #
+    df_p_new, chan_p_new = combine_channels(df=df_p, energies=meta, en_channel=[1], sensor='het')
+    assert chan_p_new == '7.3540 - 7.8900 MeV'
+    assert df_p_new.shape == (7767, 1)
+    assert df_p_new['flux'].sum() == np.float32(1.4690328)
+    df_p_new2, chan_p_new2 = combine_channels(df=df_p, energies=meta, en_channel=1, sensor='het')
+    assert df_p_new2.equals(df_p_new)
+    assert chan_p_new2 == chan_p_new
+    #
     df_e_new, chan_e_new = combine_channels(df=df_e, energies=meta, en_channel=[1, 3], sensor='het')
     assert chan_e_new == '1.0530 - 18.8300 MeV'
     assert df_e_new.shape == (38839, 1)
