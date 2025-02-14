@@ -1,11 +1,7 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
 
-from pkg_resources import DistributionNotFound, get_distribution
+from .version import version as __version__
 
-try:
-    __version__ = get_distribution(__name__).version
-except DistributionNotFound:
-    pass  # package is not installed
+# __all__ = []  # defines which functions, variables etc. will be loaded when running "from pyonset import *"
 
 import copy
 import datetime as dt
@@ -1132,7 +1128,7 @@ def _read_epd_l3_cdf(sensor, startdate, enddate=None, path=None, autodownload=Fa
                          "Electron_Energy_Delta_Plus": t_cdf_file.varget("Electron_Energy_Delta_Plus"),
                          "Electron_Energy_Delta_Minus": t_cdf_file.varget("Electron_Energy_Delta_Minus")
                          }
-        
+
         # build energy channel strings
         Ion_Bins_Text = []
         for i in range(len(energies_dict['Ion_Energy'])):
@@ -1854,7 +1850,7 @@ def combine_channels(df, energies, en_channel, sensor, viewing=None, species=Non
             raise Exception("EPT level 3 data requires 'species' option!")
         if not viewing:
             raise Exception("EPT level 3 data requires 'viewing' option!")
-        else: 
+        else:
             viewing = viewing.lower().replace('-', '')
             viewing = viewing.replace('asun', 'antisun')
             viewing_short = {'sun': 'S',
