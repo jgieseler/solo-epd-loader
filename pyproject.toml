@@ -61,12 +61,15 @@ testpaths = [
 ]
 doctest_plus = "enabled"
 text_file_format = "rst"
-addopts = "--doctest-rst"
+addopts = [
+  "--doctest-rst",
+  "--ignore=solo_epd_loader/_dev",
+]
 python_files = [
-    "test_*.py",
-    "*_test.py",
-    "test.py",
-    "tests.py",
+  "test_*.py",
+  "*_test.py",
+  "test.py",
+  "tests.py",
 ]
 
 [tool.coverage.run]
