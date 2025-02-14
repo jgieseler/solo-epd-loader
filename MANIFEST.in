@@ -4,15 +4,8 @@
 prune build
 prune docs/_build
 prune docs/api
-prune .circleci
-prune .github
-prune .jupyter
-prune binder
-# exclude a bunch of common hidden files, you probably want to add your own here
-exclude .mailmap
-exclude .gitignore
-exclude .gitattributes
-exclude .editorconfig
-exclude .zenodo.json
-exclude *.yml
-exclude *.yaml
+global-exclude *.pyc *.o
+
+# This subpackage is only used in development checkouts
+# and should not be included in built tarballs
+prune solo_epd_loader/_dev

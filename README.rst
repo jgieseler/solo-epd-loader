@@ -36,7 +36,7 @@ This software is provided "as is", with no guarantee. It is no official data sou
 Installation
 ------------
 
-solo_epd_loader requires python >= 3.6.
+solo_epd_loader requires python >= 3.9.
 
 It can be installed either from `PyPI <https://pypi.org/project/solo-epd-loader/>`_ using:
 
