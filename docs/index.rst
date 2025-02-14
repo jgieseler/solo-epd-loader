@@ -1,5 +1,5 @@
 Solar Orbiter EPD Loader Documentation
------------------------------
+--------------------------------------
 
 This is the documentation for solo-epd-loader.
 
