@@ -86,7 +86,7 @@ python_files = [
 
 [tool.coverage.run]
 omit = [
- "solo_epd_loader/__init*",
+ "setup.py",
  "solo_epd_loader/_dev/*",
  "solo_epd_loader/_version*",
  "solo_epd_loader/conftest.py",
@@ -95,7 +95,6 @@ omit = [
  "solo_epd_loader/*/tests/*",
  "solo_epd_loader/extern/*",
  "solo_epd_loader/version*",
- "*/solo_epd_loader/__init*",
  "*/solo_epd_loader/_dev/*",
  "*/solo_epd_loader/conftest.py",
  "*/solo_epd_loader/*setup_package*",
