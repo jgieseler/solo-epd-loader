@@ -340,6 +340,8 @@ In addition, two additional dataframes are provided, which provide the particle 
 Also, next to a dictionary providing energy information, another dictionary is returned that contains the CDF file metadata.
 See `data.serpentine-h2020.eu/l3data/solo/ <https://data.serpentine-h2020.eu/l3data/solo/>`_ for more details on the data product.
 
+Also note that the **corrected electron fluxes** can contain **negative values**. Though the user probably wants to omit them while plotting, they **need to be included if the data is integrated over time!**
+
 .. code:: python
 
    from matplotlib import pyplot as plt
