@@ -1916,13 +1916,13 @@ def combine_channels(df, energies, en_channel, sensor, viewing=None, species=Non
                 flux_out = pd.DataFrame({'flux': df[flux_key][f'{flux_key}_{en_channel}']}, index=df.index)
             else:
                 flux_out = pd.DataFrame({'flux': df[f'{flux_key}_{en_channel}']}, index=df.index)
-            en_channel_string = en_str[en_channel]
+            en_channel_string = en_str[en_channel].flat[0]
     else:
         if 'Pitch_Angle_A' not in df.keys():
             flux_out = pd.DataFrame({'flux': df[flux_key][f'{flux_key}_{en_channel}']}, index=df.index)
         else:
             flux_out = pd.DataFrame({'flux': df[f'{flux_key}_{en_channel}']}, index=df.index)
-        en_channel_string = en_str[en_channel]
+        en_channel_string = en_str[en_channel].flat[0]
     return flux_out, en_channel_string
 
 
