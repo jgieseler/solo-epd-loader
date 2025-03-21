@@ -1,7 +1,7 @@
 solo-epd-loader
 ===============
 
-|pypi Version| |conda version| |python version| |pytest| |codecov| |license| |zenodo doi|
+|pypi Version| |conda version| |python version| |pytest| |codecov| |license| |repostatus| |zenodo doi|
 
 .. |pypi Version| image:: https://img.shields.io/pypi/v/solo-epd-loader?style=flat&logo=pypi
    :target: https://pypi.org/project/solo-epd-loader/
@@ -15,6 +15,9 @@ solo-epd-loader
 .. |pytest| image:: https://github.com/jgieseler/solo-epd-loader/workflows/pytest/badge.svg
 .. |codecov| image:: https://codecov.io/gh/jgieseler/solo-epd-loader/branch/main/graph/badge.svg?token=Z8dueEWqKS
    :target: https://codecov.io/gh/jgieseler/solo-epd-loader
+.. |repostatus| image:: https://www.repostatus.org/badges/latest/active.svg
+   :alt: Project Status: Active – The project has reached a stable, usable state and is being actively developed.
+   :target: https://www.repostatus.org/#active
 
 Python data loader for Solar Orbiter's (SolO) `Energetic Particle Detector (EPD) <http://espada.uah.es/epd/>`_. At the moment provides level 2 (l2), level 3 (l3), and low latency (ll) data (`more details on data levels here <http://espada.uah.es/epd/EPD_data_overview.php>`_) obtained through CDF files from ESA's `Solar Orbiter Archive (SOAR) <http://soar.esac.esa.int/soar>`_ for the following sensors:
 
