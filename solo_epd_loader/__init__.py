@@ -540,8 +540,9 @@ def get_available_soar_files(startdate, enddate, sensor, level='l2'):
         # filter filenames for 'main' type (i.e., remove 'hcad')
         filelist = [s for s in filelist if "main" in s]
     elif sensor.lower() == 'ept' and level.lower() == 'l3':
-        # no filter needed because EPT L3 only has one type
-        pass
+        # filter for .cdf files and 1min time resolution
+        filelist = [s for s in filelist if "solo_L3_epd-ept-1min_" in s]
+        filelist = [s for s in filelist if ".cdf" in s]
     else:
         # filter filenames for 'rates' type (i.e., remove 'hcad')
         filelist = [s for s in filelist if "rates" in s]
