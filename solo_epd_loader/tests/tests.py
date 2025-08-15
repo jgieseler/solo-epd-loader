@@ -3,10 +3,11 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 import sunpy
 from astropy.utils.data import get_pkg_data_filename
 
-from solo_epd_loader import calc_electrons, combine_channels, create_multiindex, epd_load, resample_df, calc_ept_corrected_e
+from solo_epd_loader import calc_electrons, combine_channels, create_multiindex, custom_warning, epd_load, resample_df, calc_ept_corrected_e
 
 
 def test_ept_l3_load_online():
@@ -128,6 +129,7 @@ def test_ept_l2_load_offline():
     assert np.sum(np.isnan(df_e['Electron_Flux']['Electron_Flux_1'])) == 2
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning:solo_epd_loader")
 def test_ept_ll_load_online():
     warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
     # warnings.simplefilter(action='ignore', category=sunpy.util.SunpyUserWarning)
@@ -177,6 +179,7 @@ def test_het_l2_load_online():
     assert df_e_new['flux'].sum() == np.float32(353.9847)
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning:solo_epd_loader")
 def test_het_ll_load_online():
     warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
     # warnings.simplefilter(action='ignore', category=sunpy.util.SunpyUserWarning)
@@ -228,6 +231,7 @@ def test_step_l2_old_only_averages_resample_load_online():
     assert np.sum(np.isnan(df_e['Electron_Avg_Flux_0'])) == 6
 
 
+@pytest.mark.filterwarnings("ignore:old_step_loading option is only intended for testing purposes. Do not use!:UserWarning:solo_epd_loader")
 def test_step_l2_old_only_averages_load_online():
     warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
     df, meta = epd_load(sensor='step', startdate=20200820, autodownload=True, only_averages=True, old_step_loading=True)
