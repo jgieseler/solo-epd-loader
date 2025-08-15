@@ -24,7 +24,7 @@ dependencies = [
     "numpy",
     "pandas",
     "requests",
-    "sunpy>=4.1.0",
+    "sunpy[visualization]>=4.1.0",
     "tqdm",
     "zeep",
 ]
