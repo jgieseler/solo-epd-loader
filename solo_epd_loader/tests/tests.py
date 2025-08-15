@@ -21,7 +21,7 @@ def test_ept_l3_load_online():
     assert df_rtn.shape == (2882, 12)
     assert df_hci.shape == (50, 3)
     assert energies_dict['Electron_Energy_Delta_Minus'][0] == np.float32(0.0030769191)
-    assert df['Electron_Corrected_Flux_A_0'].sum() == np.float32(714048.75)
+    assert df['Electron_Corrected_Flux_A_0'].sum() == pytest.approx(np.float32(714048.75))
     # Check that fillvals are replaced by NaN
     assert np.sum(np.isnan(df['Ion_Flux_A_0'])) == np.int64(786)
     #
@@ -29,16 +29,16 @@ def test_ept_l3_load_online():
     df_p_new, chan_p_new = combine_channels(df=df, energies=energies_dict, en_channel=[9, 12], sensor='ept', viewing='asun', species='p')
     assert chan_p_new == '0.1628 - 0.2980 MeV'
     assert df_p_new.shape == (2880, 1)
-    assert df_p_new['flux'].sum() == np.float32(313939.88)
+    assert df_p_new['flux'].sum() == pytest.approx(np.float32(313939.88))
     # test combine_channels for electrons
     df_e_new, chan_e_new = combine_channels(df=df, energies=energies_dict, en_channel=[9, 12], sensor='ept', viewing='South', species='e')
     assert chan_e_new == '0.1432 - 0.2826 MeV'
     assert df_e_new.shape == (2880, 1)
-    assert df_e_new['flux'].sum() == np.float32(12301.297)
+    assert df_e_new['flux'].sum() == pytest.approx(np.float32(12301.297))
     df_e_new, chan_e_new = combine_channels(df=df, energies=energies_dict, en_channel=[12], sensor='ept', viewing='South', species='e')
     assert chan_e_new == '0.2379 - 0.2826 MeV'
     assert df_e_new.shape == (2880, 1)
-    assert df_e_new['flux'].sum() == np.float32(7876.287)
+    assert df_e_new['flux'].sum() == pytest.approx(np.float32(7876.287))
     df_e_new2, chan_e_new2 = combine_channels(df=df, energies=energies_dict, en_channel=12, sensor='ept', viewing='South', species='e')
     assert df_e_new2.equals(df_e_new)
     assert chan_e_new2 == chan_e_new
@@ -66,12 +66,12 @@ def test_ept_l2_load_online():
     df_p_new, chan_p_new = combine_channels(df=df_p, energies=meta, en_channel=[9, 12], sensor='ept')
     assert chan_p_new == '0.0809 - 0.1034 MeV'
     assert df_p_new.shape == (38809, 1)
-    assert df_p_new['flux'].sum() == np.float32(28518708.0)
+    assert df_p_new['flux'].sum() == pytest.approx(np.float32(28518708.0))
     #
     df_p_new, chan_p_new = combine_channels(df=df_p, energies=meta, en_channel=[1], sensor='ept')
     assert chan_p_new == '0.0520 - 0.0602 MeV'
     assert df_p_new.shape == (38809, 1)
-    assert df_p_new['flux'].sum() == np.float32(85663600.0)
+    assert df_p_new['flux'].sum() == pytest.approx(np.float32(85663600.0))
     df_p_new2, chan_p_new2 = combine_channels(df=df_p, energies=meta, en_channel=1, sensor='ept')
     assert df_p_new2.equals(df_p_new)
     assert chan_p_new2 == chan_p_new
@@ -79,7 +79,7 @@ def test_ept_l2_load_online():
     df_e_new, chan_e_new = combine_channels(df=df_e, energies=meta, en_channel=[4, 7], sensor='ept')
     assert chan_e_new == '0.0408 - 0.0542 MeV'
     assert df_e_new.shape == (38809, 1)
-    assert df_e_new['flux'].sum() == np.float32(32488384.0)
+    assert df_e_new['flux'].sum() == pytest.approx(np.float32(32488384.0))
     # test resampling
     df_e_res = resample_df(df=df_e, resample='1h')
     df_p_res = resample_df(df=df_p, resample='1h')
@@ -102,7 +102,7 @@ def test_ept_l2_load_multiple_files_online():
     assert df_p.shape == (4553, 219)
     assert df_e.shape == (453, 105)
     assert meta['Electron_Bins_Text'].flatten()[0] == '0.0312 - 0.0354 MeV'
-    assert df_p['Ion_Flux']['Ion_Flux_4'].sum() == np.float32(452909.84)
+    assert df_p['Ion_Flux']['Ion_Flux_4'].sum() == pytest.approx(np.float32(452909.84))
     # Check that fillvals are replaced by NaN
     assert np.sum(np.isnan(df_e['Electron_Flux']['Electron_Flux_1'])) == 11
 
@@ -119,8 +119,8 @@ def test_ept_l2_load_offline():
     assert df_e.shape == (158, 105)
     assert meta['Electron_Bins_Text'].flatten()[0] == '0.0312 - 0.0348 MeV'
     assert meta['Ion_Bins_Text'].flatten()[0] == '0.0485 - 0.0548 MeV'
-    assert df_p['Ion_Flux']['Ion_Flux_4'].sum() == np.float32(177390.75)
-    assert df_e['Electron_Flux']['Electron_Flux_3'].sum() == np.float32(41474.74)
+    assert df_p['Ion_Flux']['Ion_Flux_4'].sum() == pytest.approx(np.float32(177390.75))
+    assert df_e['Electron_Flux']['Electron_Flux_3'].sum() == pytest.approx(np.float32(41474.74))
     # Check that fillvals are replaced by NaN
     assert np.sum(np.isnan(df_e['Electron_Flux']['Electron_Flux_1'])) == 2
 
@@ -135,7 +135,7 @@ def test_ept_ll_load_online():
     assert df_p.shape == (749, 37)
     assert df_e.shape == (749, 17)
     assert meta['Ele_Bins_Text'].flatten()[0] == '0.0329 - 0.0411 MeV'
-    assert df_p['Ion_Flux']['Prot_Flux_4'].sum() == np.float32(372648.72)
+    assert df_p['Ion_Flux']['Prot_Flux_4'].sum() == pytest.approx(np.float32(372648.72))
     # Check that fillvals are replaced by NaN
     assert np.sum(np.isnan(df_e['Electron_Flux']['Ele_Flux_1'])) == 1
 
@@ -149,20 +149,20 @@ def test_het_l2_load_online():
     assert df_e.shape == (38839, 15)
     assert meta['Electron_Bins_Text'].flatten()[0] == '0.4533 - 1.0380 MeV'
     assert meta['H_Bins_Text'].flatten()[0] == '7.0450 - 7.3540 MeV'
-    assert df_p['H_Flux']['H_Flux_5'].sum() == np.float32(35.128803)
-    assert df_e['Electron_Flux']['Electron_Flux_3'].sum() == np.float32(92.06343)
+    assert df_p['H_Flux']['H_Flux_5'].sum() == pytest.approx(np.float32(35.128803))
+    assert df_e['Electron_Flux']['Electron_Flux_3'].sum() == pytest.approx(np.float32(92.06343))
     # Check that fillvals are replaced by NaN
     assert np.sum(np.isnan(df_e['Electron_Flux']['Electron_Flux_1'])) == 5
     # test combine_channels
     df_p_new, chan_p_new = combine_channels(df=df_p, energies=meta, en_channel=[9, 12], sensor='het')
     assert chan_p_new == '11.8000 - 15.6500 MeV'
     assert df_p_new.shape == (7767, 1)
-    assert df_p_new['flux'].sum() == np.float32(3.106687)
+    assert df_p_new['flux'].sum() == pytest.approx(np.float32(3.106687))
     #
     df_p_new, chan_p_new = combine_channels(df=df_p, energies=meta, en_channel=[1], sensor='het')
     assert chan_p_new == '7.3540 - 7.8900 MeV'
     assert df_p_new.shape == (7767, 1)
-    assert df_p_new['flux'].sum() == np.float32(1.4690328)
+    assert df_p_new['flux'].sum() == pytest.approx(np.float32(1.4690328))
     df_p_new2, chan_p_new2 = combine_channels(df=df_p, energies=meta, en_channel=1, sensor='het')
     assert df_p_new2.equals(df_p_new)
     assert chan_p_new2 == chan_p_new
@@ -170,7 +170,7 @@ def test_het_l2_load_online():
     df_e_new, chan_e_new = combine_channels(df=df_e, energies=meta, en_channel=[1, 3], sensor='het')
     assert chan_e_new == '1.0530 - 18.8300 MeV'
     assert df_e_new.shape == (38839, 1)
-    assert df_e_new['flux'].sum() == np.float32(353.9847)
+    assert df_e_new['flux'].sum() == pytest.approx(np.float32(353.9847))
 
 
 @pytest.mark.filterwarnings("ignore::UserWarning:solo_epd_loader")
@@ -183,7 +183,7 @@ def test_het_ll_load_online():
     assert df_p.shape == (749, 25)
     assert df_e.shape == (749, 9)
     assert meta['Ele_Bins_Text'].flatten()[0] == '0.4533 - 1.0380 MeV'
-    assert df_p['H_Flux']['H_Flux_5'].sum() == np.float32(0.14029181)
+    assert df_p['H_Flux']['H_Flux_5'].sum() == pytest.approx(np.float32(0.14029181))
     # Check that fillvals are replaced by NaN
     assert np.sum(np.isnan(df_e['Electron_Flux']['Ele_Flux_1'])) == 1
 
@@ -199,9 +199,9 @@ def test_step_l2_old_load_online():
     assert df.shape == (8640, 675)
     assert df_e.shape == (8640, 1011)
     assert meta['Electron_Avg_Bins_Text'].flatten()[0] == '4.09 - 4.57 keV'
-    assert df['Magnet_15_Flux_7'].sum() == np.float32(6526933.0)
+    assert df['Magnet_15_Flux_7'].sum() == pytest.approx(np.float32(6526933.0))
     assert df_e['Magnet_15_Flux_7'].sum() == df['Magnet_15_Flux_7'].sum()
-    assert df_e['Electron_11_Flux_0'].sum() == np.float32(1071644.4)
+    assert df_e['Electron_11_Flux_0'].sum() == pytest.approx(np.float32(1071644.4))
     assert np.sum(np.isnan(df_e['Electron_11_Flux_0'])) == 8639
     # test create_multiindex
     df_m = create_multiindex(df_e)
@@ -220,8 +220,8 @@ def test_step_l2_old_only_averages_resample_load_online():
     assert df_e.shape == (24, 291)
     assert meta['Electron_Avg_Bins_Text'].flatten()[0] == '4.09 - 4.57 keV'
     assert df['Magnet_Avg_Flux_7'].sum() == pytest.approx(np.float32(235159520.0))
-    assert df_e['Magnet_Avg_Flux_7'].sum() == np.float32(653220.9)
-    assert df_e['Electron_Avg_Flux_0'].sum() == np.float32(309272.3)
+    assert df_e['Magnet_Avg_Flux_7'].sum() == pytest.approx(np.float32(653220.9))
+    assert df_e['Electron_Avg_Flux_0'].sum() == pytest.approx(np.float32(309272.3))
     assert np.sum(np.isnan(df_e['Electron_Avg_Flux_0'])) == 6
 
 
@@ -246,9 +246,9 @@ def test_step_l2_new_load_online():
     assert df.shape == (49097, 2052)
     assert df_e.shape == (49097, 3076)
     assert meta['Electron_Bins_Text'].flatten()[0] == '0.0041 - 0.0046 MeV'
-    assert df['Magnet_15_Flux_7'].sum() == np.float32(544824900.0)
+    assert df['Magnet_15_Flux_7'].sum() == pytest.approx(np.float32(544824900.0))
     assert df_e['Magnet_15_Flux_7'].sum() == df['Magnet_15_Flux_7'].sum()
-    assert df_e['Electron_03_Flux_1'].sum() == np.float32(30770176.0)
+    assert df_e['Electron_03_Flux_1'].sum() == pytest.approx(np.float32(30770176.0))
     assert np.sum(np.isnan(df_e['Electron_03_Flux_1'])) == 49096
 
 
@@ -262,9 +262,9 @@ def test_step_l2_new_only_averages_resample_load_online():
     assert df.shape == (49097, 132)
     assert df_e.shape == (14, 196)
     assert meta['Electron_Bins_Text'].flatten()[0] == '0.0041 - 0.0046 MeV'
-    assert df['Magnet_Avg_Flux_7'].sum() == np.float32(1814261200.0)
-    assert df_e['Magnet_Avg_Flux_7'].sum() == np.float32(509400.1)
-    assert df_e['Electron_Avg_Flux_1'].sum() == np.float32(83453.23)
+    assert df['Magnet_Avg_Flux_7'].sum() == pytest.approx(np.float32(1814261200.0))
+    assert df_e['Magnet_Avg_Flux_7'].sum() == pytest.approx(np.float32(509400.1))
+    assert df_e['Electron_Avg_Flux_1'].sum() == pytest.approx(np.float32(83453.23))
     assert np.sum(np.isnan(df_e['Electron_Avg_Flux_1'])) == 9
     # test create_multiindex
     df_m = create_multiindex(df_e)
