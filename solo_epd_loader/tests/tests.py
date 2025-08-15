@@ -59,7 +59,7 @@ def test_ept_l2_load_online():
     assert df_p.shape == (38809, 219)
     assert df_e.shape == (38809, 105)
     assert meta['Electron_Bins_Text'].flatten()[0] == '0.0312 - 0.0354 MeV'
-    assert df_p['Ion_Flux']['Ion_Flux_4'].sum() == np.float32(61307010.0)
+    assert df_p['Ion_Flux']['Ion_Flux_4'].sum().astype(np.float64()) == np.float64(61307008.0)
     # Check that fillvals are replaced by NaN
     assert np.sum(np.isnan(df_e['Electron_Flux']['Electron_Flux_1'])) == 1
     # test combine_channels for ions
