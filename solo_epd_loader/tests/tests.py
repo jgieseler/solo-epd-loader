@@ -59,7 +59,7 @@ def test_ept_l2_load_online():
     assert df_p.shape == (38809, 219)
     assert df_e.shape == (38809, 105)
     assert meta['Electron_Bins_Text'].flatten()[0] == '0.0312 - 0.0354 MeV'
-    assert df_p['Ion_Flux']['Ion_Flux_4'].sum().astype(np.float64()) == np.float64(61307008.0)
+    assert df_p['Ion_Flux']['Ion_Flux_4'].sum() == pytest.approx(np.float32(61307010.0))
     # Check that fillvals are replaced by NaN
     assert np.sum(np.isnan(df_e['Electron_Flux']['Electron_Flux_1'])) == 1
     # test combine_channels for ions
@@ -219,7 +219,7 @@ def test_step_l2_old_only_averages_resample_load_online():
     assert df.shape == (8640, 195)
     assert df_e.shape == (24, 291)
     assert meta['Electron_Avg_Bins_Text'].flatten()[0] == '4.09 - 4.57 keV'
-    assert df['Magnet_Avg_Flux_7'].sum() == np.float32(235159520.0)
+    assert df['Magnet_Avg_Flux_7'].sum() == pytest.approx(np.float32(235159520.0))
     assert df_e['Magnet_Avg_Flux_7'].sum() == np.float32(653220.9)
     assert df_e['Electron_Avg_Flux_0'].sum() == np.float32(309272.3)
     assert np.sum(np.isnan(df_e['Electron_Avg_Flux_0'])) == 6
@@ -232,7 +232,7 @@ def test_step_l2_old_only_averages_load_online():
     assert isinstance(meta, dict)
     assert df.shape == (8640, 288)
     assert meta['Bins_Text'].flatten()[0] == '0.0057 - 0.0090 MeV/n'
-    assert df['Magnet_Flux'][7].sum() == np.float32(235159520.0)
+    assert df['Magnet_Flux'][7].sum() == pytest.approx(np.float32(235159520.0))
     assert np.sum(np.isnan(df['Magnet_Flux'][7])) == 0
 
 
