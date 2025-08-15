@@ -26,7 +26,7 @@ if hasattr(sunpy, "__version__") and Version(sunpy.__version__) >= Version("5.0.
     from sunpy.io._cdf import read_cdf, _known_units
 else:
     from sunpy.io.cdf import read_cdf, _known_units
-from sunpy.timeseries import TimeSeries
+# from sunpy.timeseries import TimeSeries
 from sunpy.util.exceptions import SunpyUserWarning
 
 # omit Pandas' PerformanceWarning
@@ -521,7 +521,7 @@ def get_available_soar_files(startdate, enddate, sensor, level='l2'):
 
     # convert bytestrings to unicode, from stackoverflow.com/a/67051068/2336056
     for col, dtype in df.dtypes.items():
-        if dtype == object:  # Only process object columns.
+        if dtype is object:  # Only process object columns.
             # decode, or return original value if decode return Nan
             df[col] = df[col].str.decode('utf-8').fillna(df[col])
 
@@ -1536,7 +1536,7 @@ def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, res
 
     if resample:
         # for all Integral and Magnet Uncertainties:
-        col_uncertainties = df.filter(like=f'_Uncertainty_').columns.tolist()
+        col_uncertainties = df.filter(like='_Uncertainty_').columns.tolist()
         for delta_flux in tqdm(col_uncertainties):
             # overwrite x_Uncertainty with temp. variable x_Uncertainty**2 * dt**2 that is summed in the resampling
             df[delta_flux] = df[delta_flux]**2 * df['DELTA_EPOCH']**2
@@ -1597,7 +1597,7 @@ def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, res
     if contamination_threshold == 0:
         print("contamination_threshold has been set to 0. Ignoring the contamination_threshold (i.e., NOT calculating it for 0)!")
 
-    if type(contamination_threshold) != int:
+    if type(contamination_threshold) is not int:
         print("Info: contamination_threshold will only be applied if it is an integer. Otherwise only negative fluxes are removed.")
 
     # remove negative fluxes (probably not needed for masked data, but for contamination_threshold=None)
@@ -1613,7 +1613,7 @@ def _calc_electrons_per_pixel_and_channel(df, Electron_Flux_Mult, pixel, contami
     df[f'Electron_{pix}_Uncertainty_{i}'] = \
         Electron_Flux_Mult[f'Electron_{pix}_Flux_Mult'][i] * np.sqrt(df[f'Integral_{pix}_Uncertainty_{i}']**2 + df[f'Magnet_{pix}_Uncertainty_{i}']**2)
 
-    if type(contamination_threshold) == int:
+    if type(contamination_threshold) is int:
         if contamination_threshold != 0:
             clean = (df[f'Integral_{pix}_Flux_{i}'] - df[f'Magnet_{pix}_Flux_{i}']) > contamination_threshold*df[f'Integral_{pix}_Uncertainty_{i}']
             # clean = (df[f'Integral_{pix}_Rate_{i}'] - df[f'Magnet_{pix}_Rate_{i}']) > contamination_threshold*np.sqrt(df[f'Integral_{pix}_Rate_{i}'])/np.sqrt(df['DELTA_EPOCH'])
@@ -1876,7 +1876,7 @@ def combine_channels(df, energies, en_channel, sensor, viewing=None, species=Non
             flux_key = 'Ion_Flux'
             if 'Pitch_Angle_A' in df.keys():
                 flux_key = f'Ion_Flux_{viewing_short[viewing]}'
-    if type(en_channel) == list:
+    if type(en_channel) is list:
         energy_low = en_str[en_channel[0]].flat[0].split('-')[0]
         energy_up = en_str[en_channel[-1]].flat[0].split('-')[-1]
         en_channel_string = energy_low + '-' + energy_up
@@ -1992,13 +1992,13 @@ def shift_index_start2center(df, delta_epoch_name=None):
             de = df.columns.get_level_values(0)[df.columns.get_level_values(0).str.startswith('DELTA_EPOCH')][0]
 
     # Do index shifting for different cadences, two versions for normal DataFrame (STEP, EPT L3) or Multiindex (EPT, HET)
-    if type(df[de]) == pd.core.series.Series:
+    if type(df[de]) is pd.core.series.Series:
         for cadence in df[de].unique():
             # skip nan's. TODO: this means for NaN entries, the index stays at the start of the interval!
             if not np.isnan(cadence):
                 # Shift index by half the cadence
                 df.loc[df[de]==cadence, 'Time'] = df.loc[df[de]==cadence, 'Time'] + pd.Timedelta(f'{cadence/2}s')
-    elif type(df[de]) == pd.core.frame.DataFrame:
+    elif type(df[de]) is pd.core.frame.DataFrame:
         for cadence in df[de][de].unique():
             # skip nan's. TODO: this means for NaN entries, the index stays at the start of the interval!
             if not np.isnan(cadence):
@@ -2487,7 +2487,7 @@ def _read_cdf_mod(fname, ignore_vars=[]):
             continue
         # TODO: use to_astropy_time() instead here when we drop pandas in timeseries
         index = CDFepoch.to_datetime(index)
-        df = pd.DataFrame(index=pd.DatetimeIndex(name=index_key, data=index))
+        df_dict = {}
         units = {}
 
         for var_key in sorted(var_keys):
@@ -2547,26 +2547,26 @@ def _read_cdf_mod(fname, ignore_vars=[]):
                             # var_key_mod = var_key.removeprefix('Sector_')
                             var_key_mod = var_key[len('Sector_'):]  # alternative to .removeprefix() that is supported in python <3.9
                             var_key_mod = var_key_mod.replace('_', '_'+str(j+1).rjust(2, '0')+'_')  # j+1: numbering hard-corded to SolO/EPD/STEP (old) data!
-                            df[var_key_mod + f'_{i}'] = col
+                            df_dict[var_key_mod + f'_{i}'] = col
                             units[var_key_mod + f'_{i}'] = unit
                 elif var_key == 'RTN_Sectors' or var_key == 'RTN_Pixels':
                     for j in range(data.T.shape[1]):
                         for i, col in enumerate(data.T[:, j, :]):
                             var_key_mod = var_key+'_'+str(j+1).rjust(2, '0')  # j+1: numbering hard-corded to SolO/EPD/STEP (old) data!
-                            df[var_key_mod + f'_{i}'] = col
+                            df_dict[var_key_mod + f'_{i}'] = col
                             units[var_key_mod + f'_{i}'] = unit
                 else:
                     warn_user(f'The variable "{var_key}" has been skipped because it is unsupported.')
             elif data.ndim == 2:
                 # Multiple columns, give each column a unique label
                 for i, col in enumerate(data.T):
-                    df[var_key + f'_{i}'] = col
+                    df_dict[var_key + f'_{i}'] = col
                     units[var_key + f'_{i}'] = unit
             else:
                 # Single column
-                df[var_key] = data
+                df_dict[var_key] = data
                 units[var_key] = unit
-
+        df = pd.DataFrame(df_dict, index=pd.DatetimeIndex(name=index_key, data=index))
         all_ts.append(GenericTimeSeries(data=df, units=units, meta=meta))
 
     if not len(all_ts):
