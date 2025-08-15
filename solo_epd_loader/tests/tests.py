@@ -7,11 +7,10 @@ import pytest
 import sunpy
 from astropy.utils.data import get_pkg_data_filename
 
-from solo_epd_loader import calc_electrons, combine_channels, create_multiindex, custom_warning, epd_load, resample_df, calc_ept_corrected_e
+from solo_epd_loader import calc_electrons, combine_channels, create_multiindex, epd_load, resample_df, calc_ept_corrected_e
 
 
 def test_ept_l3_load_online():
-    warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
     df, df_rtn, df_hci, energies_dict, metadata_dict = epd_load(sensor='ept', startdate=20240630, enddate=20240701, level='l3', autodownload=True, pos_timestamp='start')
     assert isinstance(df, pd.DataFrame)
     assert isinstance(df_rtn, pd.DataFrame)
@@ -53,7 +52,6 @@ def test_ept_l3_load_online():
 
 
 def test_ept_l2_load_online():
-    warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
     df_p, df_e, meta = epd_load(sensor='ept', startdate=20220420, viewing='asun', autodownload=True)
     assert isinstance(df_p, pd.DataFrame)
     assert isinstance(df_e, pd.DataFrame)
@@ -97,7 +95,6 @@ def test_ept_l2_load_online():
 
 
 def test_ept_l2_load_multiple_files_online():
-    warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
     df_p, df_e, meta = epd_load(sensor='ept', startdate=20200603, enddate=20200604, viewing='omni', autodownload=True)
     assert isinstance(df_p, pd.DataFrame)
     assert isinstance(df_e, pd.DataFrame)
@@ -111,7 +108,6 @@ def test_ept_l2_load_multiple_files_online():
 
 
 def test_ept_l2_load_offline():
-    warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
     # offline data files need to be replaced if data "version" is updated!
     fullpath = get_pkg_data_filename('data/test/l2/epd/ept/solo_L2_epd-ept-sun-rates_20200603_V02.cdf', package='solo_epd_loader')
     path = Path(fullpath).parent.parent.as_posix().split('/l2')[0]
@@ -131,7 +127,6 @@ def test_ept_l2_load_offline():
 
 @pytest.mark.filterwarnings("ignore::UserWarning:solo_epd_loader")
 def test_ept_ll_load_online():
-    warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
     # warnings.simplefilter(action='ignore', category=sunpy.util.SunpyUserWarning)
     df_p, df_e, meta = epd_load(sensor='ept', startdate=20220420, level='ll', viewing='north', autodownload=True)
     assert isinstance(df_p, pd.DataFrame)
@@ -146,7 +141,6 @@ def test_ept_ll_load_online():
 
 
 def test_het_l2_load_online():
-    warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
     df_p, df_e, meta = epd_load(sensor='het', startdate=20220420, viewing='north', autodownload=True)
     assert isinstance(df_p, pd.DataFrame)
     assert isinstance(df_e, pd.DataFrame)
@@ -181,7 +175,6 @@ def test_het_l2_load_online():
 
 @pytest.mark.filterwarnings("ignore::UserWarning:solo_epd_loader")
 def test_het_ll_load_online():
-    warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
     # warnings.simplefilter(action='ignore', category=sunpy.util.SunpyUserWarning)
     df_p, df_e, meta = epd_load(sensor='het', startdate=20220420, level='ll', viewing='north', autodownload=True)
     assert isinstance(df_p, pd.DataFrame)
@@ -195,6 +188,7 @@ def test_het_ll_load_online():
     assert np.sum(np.isnan(df_e['Electron_Flux']['Ele_Flux_1'])) == 1
 
 
+@pytest.mark.filterwarnings("ignore:FigureCanvasAgg is non-interactive, and thus cannot be shown:UserWarning")
 def test_step_l2_old_load_online():
     warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
     df, meta = epd_load(sensor='step', startdate=20200820, autodownload=True)
@@ -233,7 +227,6 @@ def test_step_l2_old_only_averages_resample_load_online():
 
 @pytest.mark.filterwarnings("ignore:old_step_loading option is only intended for testing purposes. Do not use!:UserWarning:solo_epd_loader")
 def test_step_l2_old_only_averages_load_online():
-    warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
     df, meta = epd_load(sensor='step', startdate=20200820, autodownload=True, only_averages=True, old_step_loading=True)
     assert isinstance(df, pd.DataFrame)
     assert isinstance(meta, dict)
@@ -280,7 +273,6 @@ def test_step_l2_new_only_averages_resample_load_online():
 
 
 def test_step_ll_old_load_online():
-    warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
     warnings.simplefilter(action='ignore', category=UserWarning)
     df, meta = epd_load(sensor='step', startdate=20200820, autodownload=True, level='ll')
     assert df == []
@@ -288,7 +280,6 @@ def test_step_ll_old_load_online():
 
 
 def test_step_ll_new_load_online():
-    warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
     warnings.simplefilter(action='ignore', category=UserWarning)
     df, meta = epd_load(sensor='step', startdate=20200820, autodownload=True, level='ll')
     assert df == []
