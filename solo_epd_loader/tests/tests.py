@@ -1,6 +1,7 @@
 import warnings
 from pathlib import Path
 
+import datetime as dt
 import numpy as np
 import pandas as pd
 import pytest
@@ -123,6 +124,53 @@ def test_ept_l2_load_offline():
     assert df_e['Electron_Flux']['Electron_Flux_3'].sum() == pytest.approx(np.float32(41474.74))
     # Check that fillvals are replaced by NaN
     assert np.sum(np.isnan(df_e['Electron_Flux']['Electron_Flux_1'])) == 2
+
+
+def test_ept_l2_load_offline_date_formats():
+    # offline data files need to be replaced if data "version" is updated!
+    fullpath = get_pkg_data_filename('data/test/l2/epd/ept/solo_L2_epd-ept-sun-rates_20200603_V02.cdf', package='solo_epd_loader')
+    path = Path(fullpath).parent.parent.as_posix().split('/l2')[0]
+    df_p, df_e, meta = epd_load(sensor='ept', startdate="2020-06-03", viewing='asun', path=path)
+    assert isinstance(df_p, pd.DataFrame)
+    assert isinstance(df_e, pd.DataFrame)
+    assert isinstance(meta, dict)
+    assert df_p.shape == (1595, 219)
+    assert df_e.shape == (158, 105)
+    assert meta['Electron_Bins_Text'].flatten()[0] == '0.0312 - 0.0348 MeV'
+    assert meta['Ion_Bins_Text'].flatten()[0] == '0.0485 - 0.0548 MeV'
+    assert df_p['Ion_Flux']['Ion_Flux_4'].sum() == pytest.approx(np.float32(177390.75))
+    assert df_e['Electron_Flux']['Electron_Flux_3'].sum() == pytest.approx(np.float32(41474.74))
+    # Check that fillvals are replaced by NaN
+    assert np.sum(np.isnan(df_e['Electron_Flux']['Electron_Flux_1'])) == 2
+    #
+    df_p, df_e, meta = epd_load(sensor='ept', startdate="2020/06/03", enddate=dt.date(2020, 6, 3), viewing='asun', path=path)
+    assert isinstance(df_p, pd.DataFrame)
+    assert isinstance(df_e, pd.DataFrame)
+    assert isinstance(meta, dict)
+    assert df_p.shape == (1595, 219)
+    assert df_e.shape == (158, 105)
+    assert meta['Electron_Bins_Text'].flatten()[0] == '0.0312 - 0.0348 MeV'
+    assert meta['Ion_Bins_Text'].flatten()[0] == '0.0485 - 0.0548 MeV'
+    assert df_p['Ion_Flux']['Ion_Flux_4'].sum() == pytest.approx(np.float32(177390.75))
+    assert df_e['Electron_Flux']['Electron_Flux_3'].sum() == pytest.approx(np.float32(41474.74))
+    # Check that fillvals are replaced by NaN
+    assert np.sum(np.isnan(df_e['Electron_Flux']['Electron_Flux_1'])) == 2
+    #
+    df_p, df_e, meta = epd_load(sensor='ept', startdate=dt.datetime(2020, 6, 3, 12, 0), enddate="2020-06-04", viewing='asun', path=path)
+    assert isinstance(df_p, pd.DataFrame)
+    assert isinstance(df_e, pd.DataFrame)
+    assert isinstance(meta, dict)
+    assert df_p.shape == (1595, 219)
+    assert df_e.shape == (158, 105)
+    assert meta['Electron_Bins_Text'].flatten()[0] == '0.0312 - 0.0348 MeV'
+    assert meta['Ion_Bins_Text'].flatten()[0] == '0.0485 - 0.0548 MeV'
+    assert df_p['Ion_Flux']['Ion_Flux_4'].sum() == pytest.approx(np.float32(177390.75))
+    assert df_e['Electron_Flux']['Electron_Flux_3'].sum() == pytest.approx(np.float32(41474.74))
+    # Check that fillvals are replaced by NaN
+    assert np.sum(np.isnan(df_e['Electron_Flux']['Electron_Flux_1'])) == 2
+    #
+    with pytest.raises(ValueError, match='Input values did not match any of the formats where the format keyword is optional:'):
+        df_p, df_e, meta = epd_load(sensor='ept', startdate="06/03/2020", viewing='asun', path=path)
 
 
 @pytest.mark.filterwarnings("ignore::UserWarning:solo_epd_loader")
