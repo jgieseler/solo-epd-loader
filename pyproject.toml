@@ -10,7 +10,7 @@ name = "solo_epd_loader"
 description = "Data loader for Solar Orbiter/EPD energetic charged particle sensors EPT, HET, and STEP."
 requires-python = ">=3.9"
 readme = { file = "README.rst", content-type = "text/x-rst" }
-license = { file = "licenses/LICENSE.rst" }
+license-files = ["licenses/LICENSE.rst"]
 authors = [
   { name = "Jan Gieseler", email = "jan.gieseler@utu.fi" },
 ]
@@ -31,7 +31,6 @@ dependencies = [
 dynamic = ["version"]
 classifiers = [
   "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: BSD License",
   "Natural Language :: English",
   "Operating System :: OS Independent",
   "Programming Language :: Python",
