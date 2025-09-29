@@ -5,7 +5,7 @@ import datetime as dt
 import numpy as np
 import pandas as pd
 import pytest
-import sunpy
+# import sunpy
 from astropy.utils.data import get_pkg_data_filename
 
 from solo_epd_loader import calc_electrons, combine_channels, create_multiindex, epd_load, resample_df, calc_ept_corrected_e
@@ -110,8 +110,8 @@ def test_ept_l2_load_multiple_files_online():
 
 def test_ept_l2_load_offline():
     # offline data files need to be replaced if data "version" is updated!
-    fullpath = get_pkg_data_filename('data/test/l2/epd/ept/solo_L2_epd-ept-sun-rates_20200603_V02.cdf', package='solo_epd_loader')
-    path = Path(fullpath).parent.parent.as_posix().split('/l2')[0]
+    fullpath = get_pkg_data_filename('data/test/solo_L2_epd-ept-sun-rates_20200603_V02.cdf', package='solo_epd_loader')
+    path = Path(fullpath).parent
     df_p, df_e, meta = epd_load(sensor='ept', startdate=20200603, viewing='asun', path=path)
     assert isinstance(df_p, pd.DataFrame)
     assert isinstance(df_e, pd.DataFrame)
@@ -128,8 +128,8 @@ def test_ept_l2_load_offline():
 
 def test_ept_l2_load_offline_date_formats():
     # offline data files need to be replaced if data "version" is updated!
-    fullpath = get_pkg_data_filename('data/test/l2/epd/ept/solo_L2_epd-ept-sun-rates_20200603_V02.cdf', package='solo_epd_loader')
-    path = Path(fullpath).parent.parent.as_posix().split('/l2')[0]
+    fullpath = get_pkg_data_filename('data/test/solo_L2_epd-ept-sun-rates_20200603_V02.cdf', package='solo_epd_loader')
+    path = Path(fullpath).parent
     df_p, df_e, meta = epd_load(sensor='ept', startdate="2020-06-03", viewing='asun', path=path)
     assert isinstance(df_p, pd.DataFrame)
     assert isinstance(df_e, pd.DataFrame)

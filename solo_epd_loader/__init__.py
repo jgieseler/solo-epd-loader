@@ -558,7 +558,7 @@ def _autodownload_cdf(startdate, enddate, sensor, level, path):
     """
     Uses get_available_soar_files() to check which files for selection criteria
     are available online. Compares with locally available files at 'path', and
-    downloads missing files to 'path' using epd_l*_download()
+    downloads missing files to 'path' using _epd_download()
     """
     fls = get_available_soar_files(startdate, enddate, sensor, level)
     for i in fls:
@@ -613,7 +613,8 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
         Required for 'ept' or 'het'; for 'step' should be None. By default None
     path : str, optional
         User-specified directory in which Solar Orbiter data is/should be
-        organized; e.g. '/home/userxyz/solo/data/', by default None
+        organized; e.g. '/home/userxyz/solo/data/'. If None, sunpy's download 
+        folder is used. By default None.
     autodownload : bool, optional
         If True, will try to download missing data files from SOAR, by default
         False.
@@ -670,6 +671,10 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
     Load EPD/EPT level 3 data for Jul 30 to Jul 31, 2024, to user-defined path, downloading missing files from SOAR:
     > df, df_rtn, df_hci, energies_dict, metadata_dict = epd_load(sensor='ept', startdate=20240730, enddate=20240731, level='l3', path='/Users/xyz/data/solo/', autodownload=True)
     """
+
+    # if no path to data directory is given, use sunpy's download directory
+    if not path:
+        path = sunpy.config.get('downloads', 'download_dir') + os.sep
 
     # use parse sunpy.time.parse_time to convert various input times to datetime
     if not isinstance(startdate, int):
@@ -758,9 +763,10 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None, au
         startdate,
         enddate:    YYYYMMDD, e.g., 20210415 (integer)
                     (if no enddate is given, 'enddate = startdate' will be set)
-        path: directory in which Solar Orbiter data is/should be organized;
-              e.g. '/home/userxyz/uni/solo/data/' (string)
-        autodownload: if True will try to download missing data files from SOAR
+        path: User-specified directory in which Solar Orbiter data is/should be
+              organized; e.g. '/home/userxyz/solo/data/'. If None, sunpy's download 
+              folder is used. By default None.
+              autodownload: if True will try to download missing data files from SOAR
     RETURNS:
         1. Pandas dataframe with proton fluxes and errors (for EPT also alpha
            particles) in 'particles / (s cm^2 sr MeV)'
@@ -772,17 +778,19 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None, au
             - Value of energy bin width in MeV
     """
 
-    # if no path to data directory is given, use the current directory
-    if path is None:
-        path = os.getcwd()
+    # if no path to data directory is given, use sunpy's download directory
+    if not path:
+        # path = os.getcwd()
+        path = sunpy.config.get('downloads', 'download_dir') + os.sep
 
+    # deactivated on 29 Sep 2025. Use one base dir in the future!
     # select sub-directory for corresponding sensor (EPT, HET)
-    if level.lower() == 'll':
-        path = Path(path)/'low_latency'/'epd'/sensor.lower()
-    if level.lower() == 'l2':
-        path = Path(path)/'l2'/'epd'/sensor.lower()
-    if level.lower() == 'l3':
-        path = Path(path)/'l3'/'epd'/sensor.lower()
+    # if level.lower() == 'll':
+    #     path = Path(path)/'low_latency'/'epd'/sensor.lower()
+    # if level.lower() == 'l2':
+    #     path = Path(path)/'l2'/'epd'/sensor.lower()
+    # if level.lower() == 'l3':
+    #     path = Path(path)/'l3'/'epd'/sensor.lower()
 
     # add a OS-specific '/' to end end of 'path'
     path = f'{path}{os.sep}'
@@ -1046,9 +1054,10 @@ def _read_epd_cdf_old(sensor, viewing, level, startdate, enddate=None, path=None
         startdate,
         enddate:    YYYYMMDD, e.g., 20210415 (integer)
                     (if no enddate is given, 'enddate = startdate' will be set)
-        path: directory in which Solar Orbiter data is/should be organized;
-              e.g. '/home/userxyz/uni/solo/data/' (string)
-        autodownload: if True will try to download missing data files from SOAR
+        path: User-specified directory in which Solar Orbiter data is/should be
+              organized; e.g. '/home/userxyz/solo/data/'. If None, sunpy's download 
+              folder is used. By default None.
+              autodownload: if True will try to download missing data files from SOAR
     RETURNS:
         1. Pandas dataframe with proton fluxes and errors (for EPT also alpha
            particles) in 'particles / (s cm^2 sr MeV)'
@@ -1060,17 +1069,19 @@ def _read_epd_cdf_old(sensor, viewing, level, startdate, enddate=None, path=None
             - Value of energy bin width in MeV
     """
 
-    # if no path to data directory is given, use the current directory
-    if path is None:
-        path = os.getcwd()
+    # if no path to data directory is given, use sunpy's download directory
+    if not path:
+        # path = os.getcwd()
+        path = sunpy.config.get('downloads', 'download_dir') + os.sep
 
+    # deactivated on 29 Sep 2025. Use one base dir in the future!
     # select sub-directory for corresponding sensor (EPT, HET)
-    if level.lower() == 'll':
-        path = Path(path)/'low_latency'/'epd'/sensor.lower()
-    if level.lower() == 'l2':
-        path = Path(path)/'l2'/'epd'/sensor.lower()
-    if level.lower() == 'l3':
-        path = Path(path)/'l3'/'epd'/sensor.lower()
+    # if level.lower() == 'll':
+    #     path = Path(path)/'low_latency'/'epd'/sensor.lower()
+    # if level.lower() == 'l2':
+    #     path = Path(path)/'l2'/'epd'/sensor.lower()
+    # if level.lower() == 'l3':
+    #     path = Path(path)/'l3'/'epd'/sensor.lower()
 
     # add a OS-specific '/' to end end of 'path'
     path = f'{path}{os.sep}'
@@ -1332,9 +1343,10 @@ def _read_epd_l3_cdf(sensor, startdate, enddate=None, path=None, autodownload=Fa
         startdate,
         enddate:    YYYYMMDD, e.g., 20210415 (integer)
                     (if no enddate is given, 'enddate = startdate' will be set)
-        path: directory in which Solar Orbiter data is/should be organized;
-              e.g. '/home/userxyz/uni/solo/data/' (string)
-        autodownload: if True will try to download missing data files from SOAR
+        path: User-specified directory in which Solar Orbiter data is/should be
+              organized; e.g. '/home/userxyz/solo/data/'. If None, sunpy's download 
+              folder is used. By default None.
+              autodownload: if True will try to download missing data files from SOAR
     RETURNS:
         1. Pandas dataframe with pitch-angles as well as proton & electron (corrected and uncorrected!) fluxes and errors in 'particles / (s cm^2 sr MeV)'
            In the column names, the numeral suffix gives the energy channel, and the 'A', 'S', 'N', or 'D' denotes the viewing, i.e., anti-sun, sun, north, or south ('down')
@@ -1344,12 +1356,14 @@ def _read_epd_l3_cdf(sensor, startdate, enddate=None, path=None, autodownload=Fa
         5. Dictionary with all metadata from the CDF file
     """
 
-    # if no path to data directory is given, use the current directory
-    if path is None:
-        path = os.getcwd()
+    # if no path to data directory is given, use sunpy's download directory
+    if not path:
+        # path = os.getcwd()
+        path = sunpy.config.get('downloads', 'download_dir') + os.sep
 
+    # deactivated on 29 Sep 2025. Use one base dir in the future!
     # select sub-directory for corresponding sensor (only EPT as of now)
-    path = Path(path)/'l3'/'epd'/sensor.lower()
+    # path = Path(path)/'l3'/'epd'/sensor.lower()
 
     # add a OS-specific '/' to end end of 'path'
     path = f'{path}{os.sep}'
@@ -1464,9 +1478,10 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
         startdate,
         enddate:    YYYYMMDD, e.g., 20210415 (integer)
                     (if no enddate is given, 'enddate = startdate' will be set)
-        path: directory in which Solar Orbiter data is/should be organized;
-              e.g. '/home/userxyz/uni/solo/data/' (string)
-        autodownload: if True will try to download missing data files from SOAR
+        path: User-specified directory in which Solar Orbiter data is/should be
+              organized; e.g. '/home/userxyz/solo/data/'. If None, sunpy's download 
+              folder is used. By default None.
+              autodownload: if True will try to download missing data files from SOAR
         only_averages : bool, optional
             If True, will for STEP only return the averaged fluxes, and not the data
             of each of the 15 Pixels. This will reduce the memory consumption. By
@@ -1481,15 +1496,17 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
     """
     sensor = 'step'
 
-    # if no path to data directory is given, use the current directory
-    if path is None:
-        path = os.getcwd()
+    # if no path to data directory is given, use sunpy's download directory
+    if not path:
+        # path = os.getcwd()
+        path = sunpy.config.get('downloads', 'download_dir') + os.sep
 
+    # deactivated on 29 Sep 2025. Use one base dir in the future!
     # select sub-directory for corresponding sensor (in this case just 'step')
-    if level.lower() == 'll':
-        path = Path(path)/'low_latency'/'epd'/sensor.lower()
-    if level.lower() == 'l2':
-        path = Path(path)/'l2'/'epd'/sensor.lower()
+    # if level.lower() == 'll':
+    #     path = Path(path)/'low_latency'/'epd'/sensor.lower()
+    # if level.lower() == 'l2':
+    #     path = Path(path)/'l2'/'epd'/sensor.lower()
 
     # add a OS-specific '/' to end end of 'path'
     path = f'{path}{os.sep}'
