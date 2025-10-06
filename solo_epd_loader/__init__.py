@@ -754,6 +754,213 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
             return df_epd_p, df_epd_e, energies_dict
 
 
+def _read_epd_cdf_new(sensor, viewing, level, startdate, enddate=None, path=None, autodownload=False, multiindex=False):
+    """
+    INPUT:
+        sensor: 'ept' or 'het' (string)
+        viewing: 'sun', 'asun', 'north', 'south', or 'omni' (string)
+        level: 'll' or 'l2' (string)
+        startdate,
+        enddate:    YYYYMMDD, e.g., 20210415 (integer)
+                    (if no enddate is given, 'enddate = startdate' will be set)
+        path: User-specified directory in which Solar Orbiter data is/should be
+              organized; e.g. '/home/userxyz/solo/data/'. If None, sunpy's download 
+              folder is used. By default None.
+        autodownload: if True will try to download missing data files from SOAR
+        multiindex: if True will return a multi-index dataframe
+    RETURNS:
+        1. Pandas dataframe with proton fluxes and errors (for EPT also alpha
+           particles) in 'particles / (s cm^2 sr MeV)'
+        2. Pandas dataframe with electron fluxes and errors in
+           'particles / (s cm^2 sr MeV)'
+        3. TODO:
+        -1. Dictionary with energy information for all particles:
+            - String with energy channel info
+            - Value of lower energy bin edge in MeV
+            - Value of energy bin width in MeV
+    """
+
+    # if no path to data directory is given, use sunpy's download directory
+    if not path:
+        # path = os.getcwd()
+        path = sunpy.config.get('downloads', 'download_dir') + os.sep
+
+    # add a OS-specific '/' to end end of 'path'
+    if path[-1] != os.sep:
+        path = f'{path}{os.sep}'
+
+    # if no 'enddate' is given, get data only for single day of 'startdate'
+    if enddate is None:
+        enddate = startdate
+
+    # if autodownload, check online available files and download if not locally
+    if autodownload:
+        _autodownload_cdf(startdate, enddate, sensor.lower(), level.lower(), path)
+
+    # get list of local files for date range
+    filelist = _get_epd_filelist(sensor.lower(), level.lower(), startdate, enddate, path=path)
+    if level.lower() == 'l3' and sensor.lower() == 'ept':
+        pass
+    else:
+        filelist = filelist[viewing.lower()]
+
+    # check for duplicate files with different version numbers and remove them
+    filelist = _check_duplicates(filelist, verbose=True)
+
+    if len(filelist) == 0:
+        custom_warning('No corresponding data files found! Try different settings, path or autodownload.')
+        df_p = []
+        df_e = []
+        df_rtn = []
+        df_hci = []
+        energies_dict = []
+    else:
+        if sensor.lower() == 'ept':
+            if level.lower() == 'll':
+                protons = 'Prot'
+                electrons = 'Ele'
+                p_epoch = 0
+                e_epoch = 0
+                ep_hr_epoch = 1
+            if level.lower() == 'l2':
+                protons = 'Ion'
+                electrons = 'Electron'
+                p_epoch = 0
+                e_epoch = 1
+                rtn_epoch = 2
+                hci_epoch = 3
+        if sensor.lower() == 'het':
+            if level.lower() == 'll':
+                protons = 'H'
+                electrons = 'Ele'
+                p_epoch = 0
+                e_epoch = 0
+                ep_hr_epoch = 1
+                he_epoch = 2
+                cno_epoch = 3
+                fe_epoch = 4
+            if level.lower() == 'l2':
+                protons = 'H'
+                electrons = 'Electron'  # EPOCH_4, QUALITY_FLAG_4
+                p_epoch = 0
+                he_epoch = 1
+                cno_epoch = 2
+                fe_epoch = 3
+                e_epoch = 4
+                rtn_epoch = 5
+                hci_epoch = 6
+
+        # load cdf files using read_cdf from sunpy (uses cdflib)
+        with warnings.catch_warnings():
+            warnings.simplefilter(action='ignore', category=SunpyUserWarning)
+            data = read_cdf(filelist[0])
+        df_p = data[p_epoch].to_dataframe()
+        df_e = data[e_epoch].to_dataframe()
+        if level.lower() == 'l2':
+            df_rtn = data[rtn_epoch].to_dataframe()
+            df_hci = data[hci_epoch].to_dataframe()
+        if sensor.lower() == 'het':
+            df_he = data[he_epoch].to_dataframe()
+            df_cno = data[cno_epoch].to_dataframe()
+            df_fe = data[fe_epoch].to_dataframe()
+        if level.lower() == 'll':
+            df_ep_hr = data[ep_hr_epoch].to_dataframe()
+
+        if len(filelist) > 1:
+            for f in filelist[1:]:
+                data = read_cdf(f)
+                t_df_p = data[p_epoch].to_dataframe()
+                t_df_e = data[e_epoch].to_dataframe()
+                df_p = pd.concat([df_p, t_df_p])
+                df_e = pd.concat([df_e, t_df_e])
+                if level.lower() == 'l2':
+                    t_df_rtn = data[rtn_epoch].to_dataframe()
+                    t_df_hci = data[hci_epoch].to_dataframe()
+                    df_rtn = pd.concat([df_rtn, t_df_rtn])
+                    df_hci = pd.concat([df_hci, t_df_hci])
+                if sensor.lower() == 'het':
+                    t_df_he = data[he_epoch].to_dataframe()
+                    t_df_cno = data[cno_epoch].to_dataframe()
+                    t_df_fe = data[fe_epoch].to_dataframe()
+                    df_he = pd.concat([df_he, t_df_he])
+                    df_cno = pd.concat([df_cno, t_df_cno])
+                    df_fe = pd.concat([df_fe, t_df_fe])
+                if level.lower() == 'll':
+                    t_df_ep_hr = data[ep_hr_epoch].to_dataframe()
+                    df_ep_hr = pd.concat([df_ep_hr, t_df_ep_hr])
+        
+        # seperate p and e for LL data
+        if level.lower() == 'll':
+            df_e = df_e.loc[:, df_e.filter(like=f'{electrons}_').keys().append(df_e.filter(like='QUALITY').keys())]
+            df_p = df_p.loc[:, df_p.filter(like=f'{protons}_').keys().append(df_p.filter(like='Alpha_').keys()).append(df_p.filter(like='QUALITY').keys())]
+
+        # directly open first cdf file with cdflib to access metadata used in the following
+        t_cdf_file = cdflib.CDF(filelist[0])
+
+        energies_dict = {protons+"_Bins_Text":
+                         t_cdf_file.varget(protons+'_Bins_Text'),
+                         protons+"_Bins_Low_Energy":
+                         t_cdf_file.varget(protons+'_Bins_Low_Energy'),
+                         protons+"_Bins_Width":
+                         t_cdf_file.varget(protons+'_Bins_Width'),
+                         electrons+"_Bins_Text":
+                         t_cdf_file.varget(electrons+'_Bins_Text'),
+                         electrons+"_Bins_Low_Energy":
+                         t_cdf_file.varget(electrons+'_Bins_Low_Energy'),
+                         electrons+"_Bins_Width":
+                         t_cdf_file.varget(electrons+'_Bins_Width')
+                         }
+
+        if sensor.lower() == 'ept':
+            energies_dict["Alpha_Bins_Text"] = \
+                t_cdf_file.varget('Alpha_Bins_Text')
+            energies_dict["Alpha_Bins_Low_Energy"] = \
+                t_cdf_file.varget('Alpha_Bins_Low_Energy')
+            energies_dict["Alpha_Bins_Width"] = \
+                t_cdf_file.varget('Alpha_Bins_Width')
+
+        # name index column (instead of e.g. 'EPOCH' or 'EPOCH_1')
+        df_p.index.names = ['Time']
+        df_e.index.names = ['Time']
+
+        if sensor.lower() == 'het':
+            df_he.index.names = ['Time']
+            df_cno.index.names = ['Time']
+            df_fe.index.names = ['Time']
+        
+        if level.lower() == 'l2':
+            df_rtn.index.names = ['Time']
+            df_hci.index.names = ['Time']
+
+        if level.lower() == 'll':
+            df_ep_hr.index.names = ['Time']
+
+    # create multi-index dataframe (if requested)
+    if multiindex:
+        df_p = create_multiindex(df_p)
+        df_e = create_multiindex(df_e)
+        if sensor.lower() == 'het':
+            df_he = create_multiindex(df_he)
+            df_cno = create_multiindex(df_cno)
+            df_fe = create_multiindex(df_fe)
+        if level.lower() == 'l2':
+            df_rtn = create_multiindex(df_rtn)
+            df_hci = create_multiindex(df_hci)
+        if level.lower() == 'll':
+            df_ep_hr = create_multiindex(df_ep_hr)
+
+    if sensor.lower() == 'het':
+        if level.lower() == 'l2':
+            return df_p, df_e, df_he, df_cno, df_fe, df_rtn, df_hci, energies_dict
+        if level.lower() == 'll':
+            return df_p, df_e, df_he, df_cno, df_fe, df_ep_hr, energies_dict
+    if sensor.lower() == 'ept':
+        if level.lower() == 'l2':
+            return df_p, df_e, df_rtn, df_hci, energies_dict
+        if level.lower() == 'll':
+            return df_p, df_e, df_ep_hr, energies_dict
+
+
 def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None, autodownload=False):
     """
     INPUT:
@@ -793,7 +1000,8 @@ def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None, au
     #     path = Path(path)/'l3'/'epd'/sensor.lower()
 
     # add a OS-specific '/' to end end of 'path'
-    path = f'{path}{os.sep}'
+    if path[-1] != os.sep:
+        path = f'{path}{os.sep}'
 
     # if no 'enddate' is given, get data only for single day of 'startdate'
     if enddate is None:
@@ -1075,7 +1283,8 @@ def _read_epd_l3_cdf(sensor, startdate, enddate=None, path=None, autodownload=Fa
     # path = Path(path)/'l3'/'epd'/sensor.lower()
 
     # add a OS-specific '/' to end end of 'path'
-    path = f'{path}{os.sep}'
+    if path[-1] != os.sep:
+        path = f'{path}{os.sep}'
 
     # if no 'enddate' is given, get data only for single day of 'startdate'
     if enddate is None:
@@ -1218,7 +1427,8 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
     #     path = Path(path)/'l2'/'epd'/sensor.lower()
 
     # add a OS-specific '/' to end end of 'path'
-    path = f'{path}{os.sep}'
+    if path[-1] != os.sep:
+        path = f'{path}{os.sep}'
 
     # if no 'enddate' is given, get data only for single day of 'startdate'
     if enddate is None:
@@ -1353,7 +1563,12 @@ def _read_new_step_cdf(files, only_averages=False):
     var_attrs = {key: cdf.varattsget(key) for key in all_var_keys}
     support_var_keys = [var for var in var_attrs if 'DEPEND_0' not in var_attrs[var] and not var.startswith('EPOCH') and not var.endswith('_Flux_Mult')]
 
-    meta = {support_var_keys[0]: cdf[support_var_keys.pop(0)]}
+    meta = {"Global_Attributes": cdf.globalattsget()}
+
+    for key in all_var_keys:
+        meta[key] = cdf.varattsget(key)
+
+    # meta[support_var_keys[0]] = cdf[support_var_keys.pop(0)]
     for i in support_var_keys:
         meta[i] = cdf[i]
 
