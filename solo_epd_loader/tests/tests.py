@@ -111,7 +111,7 @@ def test_ept_l2_load_multiple_files_online():
 def test_ept_l2_load_offline():
     # offline data files need to be replaced if data "version" is updated!
     fullpath = get_pkg_data_filename('data/test/solo_L2_epd-ept-sun-rates_20200603_V02.cdf', package='solo_epd_loader')
-    path = Path(fullpath).parent
+    path = str(Path(fullpath).parent)
     df_p, df_e, meta = epd_load(sensor='ept', startdate=20200603, viewing='asun', path=path)
     assert isinstance(df_p, pd.DataFrame)
     assert isinstance(df_e, pd.DataFrame)
@@ -129,7 +129,7 @@ def test_ept_l2_load_offline():
 def test_ept_l2_load_offline_date_formats():
     # offline data files need to be replaced if data "version" is updated!
     fullpath = get_pkg_data_filename('data/test/solo_L2_epd-ept-sun-rates_20200603_V02.cdf', package='solo_epd_loader')
-    path = Path(fullpath).parent
+    path = str(Path(fullpath).parent)
     df_p, df_e, meta = epd_load(sensor='ept', startdate="2020-06-03", viewing='asun', path=path)
     assert isinstance(df_p, pd.DataFrame)
     assert isinstance(df_e, pd.DataFrame)
