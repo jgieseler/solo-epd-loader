@@ -13,7 +13,7 @@ authors:
   family-names: Palmroos
   affiliation: University of Turku
   orcid: https://orcid.org/0000-0002-7778-5454
-version: 0.4.3
-date-released: 2025-04-03
+version: 0.4.4
+date-released: 2025-10-06
 repository-code: https://github.com/jgieseler/solo-epd-loader
 license: BSD-3-Clause
