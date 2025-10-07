@@ -34,50 +34,6 @@ from sunpy.util.exceptions import SunpyUserWarning
 warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
 
 
-"""
-Example code that loads low latency (ll) electron and proton (+alphas) fluxes
-(and errors) for 'ept' 'north' telescope from Apr 15 2021 to Apr 16 2021 into
-two Pandas dataframes (one for protons & alphas, one for electrons). In general
-available are 'sun', 'asun', 'north', and 'south' viewing directions for 'ept'
-and 'het' telescopes of SolO/EPD.
-
-from solo_epd_loader import *
-
-df_protons, df_electrons, energies = \
-_read_epd_cdf('ept', 'north', 'll', 20210415, 20210416,
-path='/home/userxyz/solo/data/')
-
-# plot protons and alphas
-ax = df_protons.plot(logy=True, subplots=True, figsize=(20,60))
-plt.show()
-
-# plot electrons
-ax = df_electrons.plot(logy=True, subplots=True, figsize=(20,60))
-plt.show()
-"""
-
-"""
-Example code that loads level 2 (l2) electron and proton (+alphas) fluxes
-(and errors) for 'het' 'sun' telescope from Aug 20 2020 to Aug 20 2020 into
-two Pandas dataframes (one for protons & alphas, one for electrons).
-
-from epd_loader import *
-
-df_protons, df_electrons, energies = \
-_read_epd_cdf('het', 'sun', 'l2', 20200820, 20200821,
-path='/home/userxyz/solo/data/')
-
-# plot protons and alphas
-ax = df_protons.plot(logy=True, subplots=True, figsize=(20,60))
-plt.show()
-
-# plot electrons
-ax = df_electrons.plot(logy=True, subplots=True, figsize=(20,60))
-plt.show()
-
-"""
-
-
 def custom_formatwarning(message, *args, **kwargs):
     # ignore everything except the message
     FAIL = '\033[91m'
