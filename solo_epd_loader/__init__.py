@@ -535,7 +535,8 @@ def _autodownload_cdf(startdate, enddate, sensor, level, path):
     return
 
 
-def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=None, autodownload=False, only_averages=False, old_step_loading=False, pos_timestamp='center'):
+# TODO: remove old_ept_het_loading
+def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=None, autodownload=False, only_averages=False, old_step_loading=False, pos_timestamp='center', old_ept_het_loading=True):
     """
     Load SolO/EPD data
 
@@ -588,7 +589,7 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
         Note: Solar Orbiter/EPD CDF data has the timestamp at the 'start' of
         the time interval.
 
-    Returns
+    Returns  # TODO: update
     -------
     For EPT & HET (level 2 & low-latency):
         1. Pandas dataframe with proton fluxes and errors (for EPT also alpha particles) in 'particles / (s cm^2 sr MeV)'
@@ -653,7 +654,7 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
 
     if level.lower() == 'l3':
         if sensor.lower() == 'ept':
-            df, df_rtn, df_hci, energies_dict, metadata_dict = _read_epd_l3_cdf(sensor=sensor.lower(),
+            data_dict, energies_dict, metadata_dict = _read_epd_l3_cdf(sensor=sensor.lower(),
                                                                                 startdate=startdate,
                                                                                 enddate=enddate,
                                                                                 path=path,
@@ -661,24 +662,24 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
             # adjusting the position of the timestamp manually. original SolO/EPD data hast timestamp at 'start' of interval
             if pos_timestamp == 'center':
                 custom_warning("Note that for the Dataframes containing the flow direction and SC coordinates timestamp position will not be adjusted by 'pos_timestamp'!")
-                if len(df) > 0:
+                if len(df) > 0: # TODO: implement pos_timestamp for EPT L3 data
                     shift_index_start2center(df)
                 # if len(df_rtn) > 0:
                 #     shift_index_start2center(df_rtn)
                 # if len(df_hci) > 0:
                 #     shift_index_start2center(df_hci)
-            return df, df_rtn, df_hci, energies_dict, metadata_dict
+            # return data_dict, energies_dict, metadata_dict
         else:
             raise Exception("Level 3 data only available for EPT! No data read!")
     else:
         if sensor.lower() == 'step':
-            datadf, energies_dict = \
+            data_dict, energies_dict, metadata_dict = \
                 _read_step_cdf(level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload,
                                only_averages=only_averages, old_loading=old_step_loading)
             # adjusting the position of the timestamp manually. original SolO/EPD data hast timestamp at 'start' of interval
             if pos_timestamp == 'center' and level.lower() != 'll' and old_step_loading is not True and len(datadf) > 0:
-                shift_index_start2center(datadf)
-            return datadf, energies_dict
+                shift_index_start2center(datadf)  # TODO: implement pos_timestamp for STEP data
+            # return data_dict, energies_dict, metadata_dict
         if sensor.lower() == 'ept' or sensor.lower() == 'het':
             if viewing is None:
                 raise Exception("EPT and HET need a telescope 'viewing' direction! No data read!")
@@ -689,28 +690,36 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
                 all_df_epd_p = {}
                 all_df_epd_e = {}
                 for view in ['sun', 'asun', 'north', 'south']:
-                    df_epd_p, df_epd_e, energies_dict = \
-                        _read_epd_cdf(sensor=sensor, viewing=view, level=level, startdate=startdate, enddate=enddate,
-                                      path=path, autodownload=autodownload)
+                    if old_ept_het_loading:
+                        df_epd_p, df_epd_e, energies_dict = \
+                            _read_epd_cdf_old(sensor=sensor, viewing=view, level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload)
+                    elif not old_ept_het_loading:
+                        data_dict, energies_dict, metadata_dict = \
+                            _read_epd_cdf(sensor=sensor, viewing=view, level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload)
                     all_df_epd_p[view] = df_epd_p
                     all_df_epd_e[view] = df_epd_e
                 # sum fluxes from all four sectors and divide by 4
+                # TODO: update with new dataframes!
                 df_epd_p = (all_df_epd_p['sun'] + all_df_epd_p['asun'] + all_df_epd_p['north'] + all_df_epd_p['south'])/4
                 df_epd_e = (all_df_epd_e['sun'] + all_df_epd_e['asun'] + all_df_epd_e['north'] + all_df_epd_e['south'])/4
             else:
-                df_epd_p, df_epd_e, energies_dict = \
-                    _read_epd_cdf(sensor=sensor, viewing=viewing, level=level, startdate=startdate, enddate=enddate,
-                                  path=path, autodownload=autodownload)
+                if old_ept_het_loading:
+                    df_epd_p, df_epd_e, energies_dict = \
+                        _read_epd_cdf_old(sensor=sensor, viewing=viewing, level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload)
+                elif not old_ept_het_loading:
+                    data_dict, energies_dict, metadata_dict = \
+                        _read_epd_cdf(sensor=sensor, viewing=viewing, level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload)
             # adjusting the position of the timestamp manually. original SolO/EPD data hast timestamp at 'start' of interval
-            if pos_timestamp == 'center' and level.lower() != 'll':
+            if pos_timestamp == 'center' and level.lower() != 'll':  # TODO: run a for-loop over all dataframes?
                 if len(df_epd_p) > 0:
                     shift_index_start2center(df_epd_p)
                 if len(df_epd_e) > 0:
                     shift_index_start2center(df_epd_e)
-            return df_epd_p, df_epd_e, energies_dict
+
+        return data_dict, energies_dict, metadata_dict
 
 
-def _read_epd_cdf_new(sensor, viewing, level, startdate, enddate=None, path=None, autodownload=False, multiindex=False):
+def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None, autodownload=False, multiindex=False):
     """
     INPUT:
         sensor: 'ept' or 'het' (string)
@@ -725,15 +734,15 @@ def _read_epd_cdf_new(sensor, viewing, level, startdate, enddate=None, path=None
         autodownload: if True will try to download missing data files from SOAR
         multiindex: if True will return a multi-index dataframe
     RETURNS:
-        1. Pandas dataframe with proton fluxes and errors (for EPT also alpha
-           particles) in 'particles / (s cm^2 sr MeV)'
-        2. Pandas dataframe with electron fluxes and errors in
-           'particles / (s cm^2 sr MeV)'
-        3. TODO:
-        -1. Dictionary with energy information for all particles:
+        1. Dictionary with multiple Pandas dataframes for different species,
+        depending on sensor and level selection. Always present are dataframes
+        with proton fluxes and errors (for EPT also alpha particles) and
+        electron fluxes and errors; both in 'particles / (s cm^2 sr MeV)'
+        2. Dictionary with energy information for all particles:
             - String with energy channel info
             - Value of lower energy bin edge in MeV
             - Value of energy bin width in MeV
+        3. Dictionary with all metadata from the CDF file
     """
 
     # if no path to data directory is given, use sunpy's download directory
@@ -853,6 +862,18 @@ def _read_epd_cdf_new(sensor, viewing, level, startdate, enddate=None, path=None
         # directly open first cdf file with cdflib to access metadata used in the following
         t_cdf_file = cdflib.CDF(filelist[0])
 
+        # dict with all metadata info
+        metadata_dict = {"Global_Attributes": t_cdf_file.globalattsget()}
+        cdf_info = t_cdf_file.cdf_info()
+        if hasattr(cdflib, "__version__") and Version(cdflib.__version__) >= Version("1.0.0"):
+            all_var_keys = cdf_info.rVariables + cdf_info.zVariables
+        else:
+            all_var_keys = cdf_info['rVariables'] + cdf_info['zVariables']
+        #
+        for key in all_var_keys:
+            metadata_dict[key] = t_cdf_file.varattsget(key)
+
+        # dict with energy info for selected species
         energies_dict = {protons+"_Bins_Text":
                          t_cdf_file.varget(protons+'_Bins_Text'),
                          protons+"_Bins_Low_Energy":
@@ -907,17 +928,19 @@ def _read_epd_cdf_new(sensor, viewing, level, startdate, enddate=None, path=None
 
     if sensor.lower() == 'het':
         if level.lower() == 'l2':
-            return df_p, df_e, df_he, df_cno, df_fe, df_rtn, df_hci, energies_dict
+            data_dict = {'df_p': df_p, 'df_e': df_e, 'df_he': df_he, 'df_cno': df_cno, 'df_fe': df_fe, 'df_rtn': df_rtn, 'df_hci': df_hci}
         if level.lower() == 'll':
-            return df_p, df_e, df_he, df_cno, df_fe, df_ep_hr, energies_dict
+            data_dict = {'df_p': df_p, 'df_e': df_e, 'df_he': df_he, 'df_cno': df_cno, 'df_fe': df_fe, 'df_ep_hr': df_ep_hr}
     if sensor.lower() == 'ept':
         if level.lower() == 'l2':
-            return df_p, df_e, df_rtn, df_hci, energies_dict
+            data_dict = {'df_p': df_p, 'df_e': df_e, 'df_rtn': df_rtn, 'df_hci': df_hci}
         if level.lower() == 'll':
-            return df_p, df_e, df_ep_hr, energies_dict
+            data_dict = {'df_p': df_p, 'df_e': df_e, 'df_ep_hr': df_ep_hr}
+
+    return data_dict, energies_dict, metadata_dict
 
 
-def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None, autodownload=False):
+def _read_epd_cdf_old(sensor, viewing, level, startdate, enddate=None, path=None, autodownload=False):
     """
     INPUT:
         sensor: 'ept' or 'het' (string)
@@ -1221,10 +1244,11 @@ def _read_epd_l3_cdf(sensor, startdate, enddate=None, path=None, autodownload=Fa
               folder is used. By default None.
               autodownload: if True will try to download missing data files from SOAR
     RETURNS:
-        1. Pandas dataframe with pitch-angles as well as proton & electron (corrected and uncorrected!) fluxes and errors in 'particles / (s cm^2 sr MeV)'
-           In the column names, the numeral suffix gives the energy channel, and the 'A', 'S', 'N', or 'D' denotes the viewing, i.e., anti-sun, sun, north, or south ('down')
-        2. Pandas dataframe with particle flow direction (unit vector) in RTN coordinates for 'A', 'S', 'N', or 'D' viewing
-        3. Pandas dataframe with spacecraft position in HCI coordinates
+        1. A dictionary containing three Pandas dataframes:
+            a. Pandas dataframe with pitch-angles as well as proton & electron (corrected and uncorrected!) fluxes and errors in 'particles / (s cm^2 sr MeV)'
+                In the column names, the numeral suffix gives the energy channel, and the 'A', 'S', 'N', or 'D' denotes the viewing, i.e., anti-sun, sun, north, or south ('down')
+            b. Pandas dataframe with particle flow direction (unit vector) in RTN coordinates for 'A', 'S', 'N', or 'D' viewing
+            c. Pandas dataframe with spacecraft position in HCI coordinates
         4. Dictionary with energy information for all particles
         5. Dictionary with all metadata from the CDF file
     """
@@ -1333,7 +1357,7 @@ def _read_epd_l3_cdf(sensor, startdate, enddate=None, path=None, autodownload=Fa
             all_var_keys = cdf_info.rVariables + cdf_info.zVariables
         else:
             all_var_keys = cdf_info['rVariables'] + cdf_info['zVariables']
-
+        #
         for key in all_var_keys:
             metadata_dict[key] = t_cdf_file.varattsget(key)
 
@@ -1342,7 +1366,9 @@ def _read_epd_l3_cdf(sensor, startdate, enddate=None, path=None, autodownload=Fa
         df_rtn.index.names = ['Time']
         df_hci.index.names = ['Time']
 
-    return df, df_rtn, df_hci, energies_dict, metadata_dict
+    data_dict = {'df': df, 'df_rtn': df_rtn, 'df_hci': df_hci}
+
+    return data_dict, energies_dict, metadata_dict
 
 
 def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False, only_averages=False, old_loading=False):
@@ -1361,12 +1387,13 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
             of each of the 15 Pixels. This will reduce the memory consumption. By
             default False.
     RETURNS:
-        1. Pandas dataframe with fluxes and errors in
-           'particles / (s cm^2 sr MeV)'
+        1. Dictionary with Pandas Dataframe containing the data with fluxes and
+        errors in 'particles / (s cm^2 sr MeV)'
         2. Dictionary with energy information for all particles:
             - String with energy channel info
             - Value of lower energy bin edge in MeV
             - Value of energy bin width in MeV
+        3. Dictionary with all metadata from the CDF file
     """
     sensor = 'step'
 
@@ -1476,6 +1503,8 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
                         continue
                 datadf = pd.concat(df_list)
 
+                metadata_dict = {}  # empty for old STEP data loading
+
                 # transform the index of the dataframe into pd_datetime
                 datetimes = cdflib.cdfepoch.encode(datadf.index.values)
                 datadf.index = pd.to_datetime(datetimes)
@@ -1485,9 +1514,9 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
                 # if type(contamination_threshold) == int:
                 #     print("'contamination_threshold' not yet included for old STEP data (before Oct 22, 2021)!")
             else:
-                datadf, energies_dict = _read_new_step_cdf(filelist, only_averages)
+                datadf, energies_dict, metadata_dict = _read_new_step_cdf(filelist, only_averages)
         elif product == 'main':
-            datadf, energies_dict = _read_new_step_cdf(filelist, only_averages)
+            datadf, energies_dict, metadata_dict = _read_new_step_cdf(filelist, only_averages)
 
     # rename index column (instead of e.g. 'EPOCH' or 'EPOCH_1')
     if type(datadf) is pd.DataFrame:
@@ -1498,7 +1527,7 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
     dependencies and cannot easily be put in the same dataframe!
     '''
 
-    return datadf, energies_dict
+    return datadf, energies_dict, metadata_dict
 
 
 def _read_new_step_cdf(files, only_averages=False):
@@ -1507,7 +1536,7 @@ def _read_new_step_cdf(files, only_averages=False):
     EPOCH_X dependent data is obtained as Pandas Dataframe via sunpy.
     Time-independent meta data is read in from the first cdf file via cdflib.
     """
-    all_columns = False  # if False, Rate data will be omitted
+    all_columns = False  # if False, Rate data will be omitted  # TODO: make this an input option?
 
     # read electron correction factors and meta data via cdflib
     cdf = cdflib.CDF(files[0])
@@ -1519,14 +1548,14 @@ def _read_new_step_cdf(files, only_averages=False):
     var_attrs = {key: cdf.varattsget(key) for key in all_var_keys}
     support_var_keys = [var for var in var_attrs if 'DEPEND_0' not in var_attrs[var] and not var.startswith('EPOCH') and not var.endswith('_Flux_Mult')]
 
-    meta = {"Global_Attributes": cdf.globalattsget()}
+    metadata_dict = {"Global_Attributes": cdf.globalattsget()}
 
     for key in all_var_keys:
-        meta[key] = cdf.varattsget(key)
+        metadata_dict[key] = cdf.varattsget(key)
 
-    # meta[support_var_keys[0]] = cdf[support_var_keys.pop(0)]
+    # metadata_dict[support_var_keys[0]] = cdf[support_var_keys.pop(0)]
     for i in support_var_keys:
-        meta[i] = cdf[i]
+        metadata_dict[i] = cdf[i]
 
     if 'Electron_Avg_Flux_Mult' in var_attrs:
         Electron_Flux_Mult = {'Electron_Avg_Flux_Mult': cdf['Electron_Avg_Flux_Mult']}
@@ -1535,15 +1564,15 @@ def _read_new_step_cdf(files, only_averages=False):
             Electron_Flux_Mult['Electron_'+str(i).rjust(2, '0')+'_Flux_Mult'] = cdf['Electron_'+str(i).rjust(2, '0')+'_Flux_Mult']
         # df_Electron_Flux_Mult = pd.DataFrame(Electron_Flux_Mult)  # get dataframe from dict - not needed atm.
 
-        meta['Electron_Flux_Mult'] = Electron_Flux_Mult
+        metadata_dict['Electron_Flux_Mult'] = Electron_Flux_Mult
 
-    if hasattr(cdflib, "__version__") and Version(cdflib.__version__) >= Version("1.0.0"):
-        zvars = cdf.cdf_info().zVariables
-    else:
-        zvars = cdf.cdf_info()['zVariables']
+    # if hasattr(cdflib, "__version__") and Version(cdflib.__version__) >= Version("1.0.0"):
+    #     zvars = cdf.cdf_info().zVariables
+    # else:
+    #     zvars = cdf.cdf_info()['zVariables']
 
-    if 'RTN' in zvars:
-        meta['df_rtn_desc'] = cdf.varattsget('RTN')['CATDESC']
+    # if 'RTN' in zvars:
+    #     metadata_dict['df_rtn_desc'] = cdf.varattsget('RTN')['CATDESC']
 
     del cdf
 
@@ -1600,24 +1629,22 @@ def _read_new_step_cdf(files, only_averages=False):
         df_hci = pd.concat([df_hci, tdf_hci])
         del (tss, tdf, tdf_rtn, tdf_hci)
 
-    # move RTN and HCI to different df's because they have different time indices
-    # print('move RTN')
-    # df_rtn = df[['RTN_0', 'RTN_1', 'RTN_2']].dropna(how='all')
-    # df = df.drop(columns=['RTN_0', 'RTN_1', 'RTN_2']).dropna(how='all')  # remove lines only containing NaN's (all)
-    # print('move HCI')
-    # df_hci = df[['HCI_Lat', 'HCI_Lon', 'HCI_R']].dropna(how='all')
-    # df = df.drop(columns=['HCI_Lat', 'HCI_Lon', 'HCI_R']).dropna(how='all')  # remove lines only containing NaN's (all)
-    meta['df_rtn'] = df_rtn
-    del df_rtn
-    meta['df_hci'] = df_hci
-    del df_hci
+        # name index column (instead of e.g. 'EPOCH' or 'EPOCH_1')
+        df.index.names = ['Time']
+        df_rtn.index.names = ['Time']
+        df_hci.index.names = ['Time']
+
+    data_dict = {'df': df, 'df_rtn': df_rtn, 'df_hci': df_hci}
+
+    # delete obsolete dataframes to save memory
+    del (df_rtn, df_hci)
 
     """
     # what to do with this? not read in by sunpy because of multi-dimensionality. skip for now
     RTN_Pixels              (EPOCH_1, Pixels, dim1) float32 0.8412 ... -0.2708
                             CATDESC: 'Particle flow direction (unit vector) in RTN coordinates for each pixel'
     """
-    meta['RTN_Pixels'] = 'CDF var RTN_Pixels (Particle flow direction (unit vector) in RTN coordinates for each pixel) left out as of now because it is multidimensional'
+    metadata_dict['RTN_Pixels_Info'] = 'CDF var RTN_Pixels (Particle flow direction (unit vector) in RTN coordinates for each pixel) left out as of now because it is multidimensional'
 
     """
     Electron_Flux calculation moved to own function that includes correct resampling. For Now, it should be called independently.
@@ -1625,43 +1652,52 @@ def _read_new_step_cdf(files, only_averages=False):
     """
 
     # define old STEP data electron multiplication factors
-    if 'Electron_Flux_Mult' not in meta.keys():
+    if 'Electron_Flux_Mult' not in metadata_dict.keys():
         if df.index[0] <= pd.Timestamp(dt.date(2021, 10, 22)):  # old STEP data
-            meta['Electron_Flux_Mult'] = {'Electron_Avg_Flux_Mult': np.array([0.6, 0.61, 0.63, 0.68, 0.76, 0.81, 1.06, 1.32, 1.35, 1.35, 1.35,
+            metadata_dict['Electron_Flux_Mult'] = {'Electron_Avg_Flux_Mult': np.array([0.6, 0.61, 0.63, 0.68, 0.76, 0.81, 1.06, 1.32, 1.35, 1.35, 1.35,
                                                                               1.34, 1.34, 1.35, 1.38, 1.36, 1.32, 1.32, 1.28, 1.26, 1.15, 1.15,
                                                                               1.15, 1.15, 1.16, 1.16, 1.16, 1.17, 1.17, 1.16, 1.18, 1.17, 1.17,
                                                                               1.16, 1.17, 1.15, 1.16, 1.17, 1.18, 1.17, 1.17, 1.17, 1.18, 1.18,
                                                                               1.19, 1.18, 1.19, 1.2])}
             for i in range(1, 16):
-                meta['Electron_Flux_Mult']['Electron_'+str(i).rjust(2, '0')+'_Flux_Mult'] = np.array([0.66, 1.22, 1.35, 1.36, 1.18, 1.17, 1.16, 1.18])
+                metadata_dict['Electron_Flux_Mult']['Electron_'+str(i).rjust(2, '0')+'_Flux_Mult'] = np.array([0.66, 1.22, 1.35, 1.36, 1.18, 1.17, 1.16, 1.18])
+
+    keys_to_include = ['Bins_Low_Energy', 'Bins_Width', 'Bins_Text', 'Electron_Bins_Low_Energy', 'Electron_Bins_Width', 'Electron_Bins_Text', 'Sector_Bins_Low_Energy', 'Sector_Bins_Width', 'Sector_Bins_Text', 'Electron_Avg_Bins_Low_Energy', 'Electron_Avg_Bins_High_Energy', 'Electron_Avg_Bins_Text', 'Electron_Avg_Bins_Width', 'Electron_Sectors_Bins_Low_Energy', 'Electron_Sectors_Bins_High_Energy', 'Electron_Sectors_Bins_Text', 'Electron_Sectors_Bins_Width']
+    # energies_dict = {key: metadata_dict[key] for key in keys_to_include}
+    energies_dict = {}
+    for key in keys_to_include: 
+        try:
+            energies_dict[key] = metadata_dict[key]
+        except KeyError:
+            pass
 
     # define old STEP data electron energy values
-    if 'Electron_Bins_Low_Energy' not in meta.keys():
-        if 'Electron_Avg_Bins_Low_Energy' not in meta.keys():
+    if 'Electron_Bins_Low_Energy' not in energies_dict.keys():
+        if 'Electron_Avg_Bins_Low_Energy' not in energies_dict.keys():
             if df.index[0] <= pd.Timestamp(dt.date(2021, 10, 22)):  # old STEP data
-                meta['Electron_Avg_Bins_Low_Energy'] = np.array([4.09, 4.37, 4.56, 4.83, 5.17, 5.4, 5.65, 5.96, 6.42,
+                energies_dict['Electron_Avg_Bins_Low_Energy'] = np.array([4.09, 4.37, 4.56, 4.83, 5.17, 5.4, 5.65, 5.96, 6.42,
                                                                  6.7, 7.05, 9.06, 9.81, 10.25, 10.69, 11.71, 12.21, 12.73,
                                                                  13.87, 14.45, 15.09, 16.43, 17.19, 18.72, 19.5, 20.4, 22.32,
                                                                  23.34, 24.32, 26.54, 27.65, 28.83, 31.35, 32.77, 35.88, 37.4,
                                                                  38.92, 42.55, 44.6, 46.65, 50.7, 53.04, 55.34, 60.21, 62.73,
                                                                  68.55, 71.66, 74.84])
-                meta['Electron_Avg_Bins_High_Energy'] = np.array([4.57, 4.79, 4.97, 5.31, 5.55, 5.78, 6.03, 6.48, 6.78,
+                energies_dict['Electron_Avg_Bins_High_Energy'] = np.array([4.57, 4.79, 4.97, 5.31, 5.55, 5.78, 6.03, 6.48, 6.78,
                                                                   7.07, 9.06, 9.81, 10.25, 10.69, 11.71, 12.21, 12.73, 13.87,
                                                                   14.45, 15.09, 16.43, 17.19, 18.72, 19.5, 20.4, 22.32, 23.34,
                                                                   24.32, 26.54, 27.65, 28.83, 31.35, 32.77, 35.88, 37.4, 38.92,
                                                                   42.55, 44.6, 46.65, 50.7, 53.04, 55.34, 60.21, 62.73, 68.55,
                                                                   71.66, 74.84, 81.36])
-                meta['Electron_Avg_Bins_Text'] = np.array([[f"{meta['Electron_Avg_Bins_Low_Energy'][i]} - {meta['Electron_Avg_Bins_High_Energy'][i]} keV"] for i in range(len(meta['Electron_Avg_Bins_High_Energy']))])
-                meta['Electron_Avg_Bins_Low_Energy'] = meta['Electron_Avg_Bins_Low_Energy']/1000  # convert from keV to MeV for consistency with new STEP data
-                meta['Electron_Avg_Bins_High_Energy'] = meta['Electron_Avg_Bins_High_Energy']/1000  # convert from keV to MeV for consistency with new STEP data
-                meta['Electron_Avg_Bins_Width'] = meta['Electron_Avg_Bins_High_Energy'] - meta['Electron_Avg_Bins_Low_Energy']
+                energies_dict['Electron_Avg_Bins_Text'] = np.array([[f"{energies_dict['Electron_Avg_Bins_Low_Energy'][i]} - {energies_dict['Electron_Avg_Bins_High_Energy'][i]} keV"] for i in range(len(energies_dict['Electron_Avg_Bins_High_Energy']))])
+                energies_dict['Electron_Avg_Bins_Low_Energy'] = energies_dict['Electron_Avg_Bins_Low_Energy']/1000  # convert from keV to MeV for consistency with new STEP data
+                energies_dict['Electron_Avg_Bins_High_Energy'] = energies_dict['Electron_Avg_Bins_High_Energy']/1000  # convert from keV to MeV for consistency with new STEP data
+                energies_dict['Electron_Avg_Bins_Width'] = energies_dict['Electron_Avg_Bins_High_Energy'] - energies_dict['Electron_Avg_Bins_Low_Energy']
 
-                meta['Electron_Sectors_Bins_Low_Energy'] = np.array([4.19, 5.50, 7.04, 9.06, 13.88, 21.29, 32.77, 53.05])
-                meta['Electron_Sectors_Bins_High_Energy'] = np.array([5.50, 7.04, 9.06, 13.88, 21.29, 32.77, 53.05, 81.38])
-                meta['Electron_Sectors_Bins_Text'] = np.array([[f"{meta['Electron_Sectors_Bins_Low_Energy'][i]} - {meta['Electron_Sectors_Bins_High_Energy'][i]} keV"] for i in range(len(meta['Electron_Sectors_Bins_High_Energy']))])
-                meta['Electron_Sectors_Bins_Low_Energy'] = meta['Electron_Sectors_Bins_Low_Energy']/1000  # convert from keV to MeV for consistency with new STEP data
-                meta['Electron_Sectors_Bins_High_Energy'] = meta['Electron_Sectors_Bins_High_Energy']/1000  # convert from keV to MeV for consistency with new STEP data
-                meta['Electron_Sectors_Bins_Width'] = meta['Electron_Sectors_Bins_High_Energy'] - meta['Electron_Sectors_Bins_Low_Energy']
+                energies_dict['Electron_Sectors_Bins_Low_Energy'] = np.array([4.19, 5.50, 7.04, 9.06, 13.88, 21.29, 32.77, 53.05])
+                energies_dict['Electron_Sectors_Bins_High_Energy'] = np.array([5.50, 7.04, 9.06, 13.88, 21.29, 32.77, 53.05, 81.38])
+                energies_dict['Electron_Sectors_Bins_Text'] = np.array([[f"{energies_dict['Electron_Sectors_Bins_Low_Energy'][i]} - {energies_dict['Electron_Sectors_Bins_High_Energy'][i]} keV"] for i in range(len(energies_dict['Electron_Sectors_Bins_High_Energy']))])
+                energies_dict['Electron_Sectors_Bins_Low_Energy'] = energies_dict['Electron_Sectors_Bins_Low_Energy']/1000  # convert from keV to MeV for consistency with new STEP data
+                energies_dict['Electron_Sectors_Bins_High_Energy'] = energies_dict['Electron_Sectors_Bins_High_Energy']/1000  # convert from keV to MeV for consistency with new STEP data
+                energies_dict['Electron_Sectors_Bins_Width'] = energies_dict['Electron_Sectors_Bins_High_Energy'] - energies_dict['Electron_Sectors_Bins_Low_Energy']
 
     # add 'Avg' to old STEP data product's corresponding columns (Magnet_Flux_0 => Magnet_Avg_Flux_0) in order to be consistent with new data product
     avg_dict = {}
@@ -1681,10 +1717,11 @@ def _read_new_step_cdf(files, only_averages=False):
     # df3['QUALITY_BITMASK'] = df['QUALITY_BITMASK']
     # df3['SMALL_PIXELS_FLAG'] = df['SMALL_PIXELS_FLAG']
 
-    return df, meta
+    return data_dict, energies_dict, metadata_dict
 
 
-def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, resample=False):
+# TODO: update input to new structure. right now df = data_dict['df']
+def calc_electrons(df, metadata_dict, contamination_threshold=2, only_averages=False, resample=False):
     """
     Calulate STEP electron data from Integral and Magnet observations.
 
@@ -1693,8 +1730,8 @@ def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, res
     df : Pandas DataFrame
         DataFrame containing the original STEP data read-in with epd_load
         (containing Integral_Fluxes and Magnet_Fluxes).
-    meta : dict
-        Dictionary of meta data like energy information provided as second
+    metadata_dict : dict
+        Dictionary of meta data like energy information provided as third
         output of epd_load.
     contamination_threshold : int or False/None, optional
         If int, mask electron data that probably is contaminated (i.e., set it
@@ -1717,7 +1754,7 @@ def calc_electrons(df, meta, contamination_threshold=2, only_averages=False, res
     """
     df = df.copy()
 
-    Electron_Flux_Mult = meta['Electron_Flux_Mult']
+    Electron_Flux_Mult = metadata_dict['Electron_Flux_Mult']
 
     if resample:
         # for all Integral and Magnet Uncertainties:
