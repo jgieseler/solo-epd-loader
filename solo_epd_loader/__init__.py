@@ -1744,7 +1744,11 @@ def calc_electrons(df, metadata_dict, contamination_threshold=2, only_averages=F
         of each of the 15 Pixels. This will reduce the memory consumption. By
         default False.
     resample : str
-        Pandas-readable resampling time, e.g. '1min'
+        Pandas-readable resampling time, e.g. '1min'. Note that this is just a
+        simple wrapper around the pandas resample function that is calculating
+        the mean of the data in the new time bins. This is not necessarily the
+        correct way to resample data, depending on the data type (for example
+        for errors)!
 
     Returns
     -------
@@ -2154,7 +2158,11 @@ calc_av_en_flux = copy.copy(combine_channels)  # define old name of the function
 
 def resample_df(df, resample, pos_timestamp="center", origin="start"):
     """
-    Resamples a Pandas Dataframe or Series to a new frequency.
+    Resamples a Pandas Dataframe or Series to a new frequency. Note that this
+    is just a simple wrapper around the pandas resample function that is
+    calculating the mean of the data in the new time bins. This is not
+    necessarily the correct way to resample data, depending on the data type
+    (for example for errors)!
 
     Parameters:
     -----------
