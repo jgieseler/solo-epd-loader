@@ -717,25 +717,6 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
                                     data_dict[key][f'{subkey}_{view}'] = all_data_dict[f'{key}_{view}'][f'{subkey}']
                             else:  # e.g. 'Electron_Flux_0', Ion_Uncertainty_48, ...
                                 data_dict[key][subkey] = (all_data_dict[f'{key}_sun'][subkey] + all_data_dict[f'{key}_asun'][subkey] + all_data_dict[f'{key}_north'][subkey] + all_data_dict[f'{key}_south'][subkey])/4
-
-
-
-
-
-                # for key in data_dict.keys():
-                #     # drop df_rtn and df_hci because taking the mean does not make sense for them
-                #     if key in ['df_rtn', 'df_hci']:
-                #         del(data_dict[key])
-                #     # sum fluxes from all four sectors and divide by 4
-                #     else:
-                #         data_dict[key] = (all_data_dict[f'{key}_sun'] + all_data_dict[f'{key}_asun'] + all_data_dict[f'{key}_north'] + all_data_dict[f'{key}_south'])/4
-
-
-
-
-
-
-
             else:
                 # if old_ept_het_loading:
                 #     df_epd_p, df_epd_e, energies_dict = \
