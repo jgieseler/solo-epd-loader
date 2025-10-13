@@ -661,8 +661,9 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
                                                                                 autodownload=autodownload)
             # adjusting the position of the timestamp manually. original SolO/EPD data hast timestamp at 'start' of interval
             if pos_timestamp == 'center':
+                # TODO: implement pos_timestamp for EPT L3 data also for df_rtn and df_hci?
                 custom_warning("Note that for the Dataframes containing the flow direction and SC coordinates timestamp position will not be adjusted by 'pos_timestamp'!")
-                if len(df) > 0: # TODO: implement pos_timestamp for EPT L3 data
+                if len(df) > 0:
                     shift_index_start2center(df)
                 # if len(df_rtn) > 0:
                 #     shift_index_start2center(df_rtn)
@@ -687,28 +688,61 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
                 df_epd_e = []
                 energies_dict = []
             elif viewing == 'omni':
-                all_df_epd_p = {}
-                all_df_epd_e = {}
+                data_dict = {}
+                all_data_dict = {}
                 for view in ['sun', 'asun', 'north', 'south']:
-                    if old_ept_het_loading:
-                        df_epd_p, df_epd_e, energies_dict = \
-                            _read_epd_cdf_old(sensor=sensor, viewing=view, level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload)
-                    elif not old_ept_het_loading:
-                        data_dict, energies_dict, metadata_dict = \
-                            _read_epd_cdf(sensor=sensor, viewing=view, level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload)
-                    all_df_epd_p[view] = df_epd_p
-                    all_df_epd_e[view] = df_epd_e
-                # sum fluxes from all four sectors and divide by 4
-                # TODO: update with new dataframes!
-                df_epd_p = (all_df_epd_p['sun'] + all_df_epd_p['asun'] + all_df_epd_p['north'] + all_df_epd_p['south'])/4
-                df_epd_e = (all_df_epd_e['sun'] + all_df_epd_e['asun'] + all_df_epd_e['north'] + all_df_epd_e['south'])/4
+                    # if old_ept_het_loading:
+                    #     df_epd_p, df_epd_e, energies_dict = \
+                    #         _read_epd_cdf_old(sensor=sensor, viewing=view, level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload)
+                    # elif not old_ept_het_loading:
+                    t_data_dict, energies_dict, metadata_dict = \
+                        _read_epd_cdf(sensor=sensor, viewing=view, level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload)
+                    for key in t_data_dict.keys():  # e.g. df_p, df_e, df_rtn, df_hci, ...
+                        all_data_dict[f'{key}_{view}'] = t_data_dict[key]  # e.g. all_data_dict['df_p_sun']
+                # sum fluxes and uncertainties (TODO: make this bette for uncertainties!) from all four sectors and divide by 4
+                for key in t_data_dict.keys():  # e.g. df_p, df_e, df_rtn, df_hci, ...
+                    data_dict[key] = pd.DataFrame()  # initialize empty dataframe for each key
+                    if key in ['df_rtn']:
+                        # make whole df_rtn (viewing directions) NaN because taking the mean does not make sense
+                        data_dict[key] = all_data_dict[f'{key}_sun']  # just to have the right structure
+                        data_dict[key][:] = np.nan
+                    elif key in ['df_hci']:
+                        data_dict[key] = all_data_dict[f'{key}_sun']  # take only sun viewing direction for SC position bc. it's the same for all four viewings
+                    else:  # e.g. df_p, df_e, 'df_he', 'df_cno', 'df_fe'
+                        for subkey in t_data_dict[key].keys():  # e.g. 'Electron_Flux_0', 'QUALITY_BITMASK_4', ...
+                            if subkey in ['DELTA_EPOCH', 'DELTA_EPOCH_1', 'DELTA_EPOCH_2', 'DELTA_EPOCH_3', 'DELTA_EPOCH_4', 'DELTA_EPOCH_5', 'DELTA_EPOCH_6',
+                                          'QUALITY_BITMASK', 'QUALITY_BITMASK_1', 'QUALITY_BITMASK_2', 'QUALITY_BITMASK_3', 'QUALITY_BITMASK_4', 'QUALITY_BITMASK_5', 'QUALITY_BITMASK_6',
+                                          'QUALITY_FLAG', 'QUALITY_FLAG_1', 'QUALITY_FLAG_2', 'QUALITY_FLAG_3', 'QUALITY_FLAG_4', 'QUALITY_FLAG_5', 'QUALITY_FLAG_6']:
+                                for view in ['sun', 'asun', 'north', 'south']:
+                                    data_dict[key][f'{subkey}_{view}'] = all_data_dict[f'{key}_{view}'][f'{subkey}']
+                            else:  # e.g. 'Electron_Flux_0', Ion_Uncertainty_48, ...
+                                data_dict[key][subkey] = (all_data_dict[f'{key}_sun'][subkey] + all_data_dict[f'{key}_asun'][subkey] + all_data_dict[f'{key}_north'][subkey] + all_data_dict[f'{key}_south'][subkey])/4
+
+
+
+
+
+                # for key in data_dict.keys():
+                #     # drop df_rtn and df_hci because taking the mean does not make sense for them
+                #     if key in ['df_rtn', 'df_hci']:
+                #         del(data_dict[key])
+                #     # sum fluxes from all four sectors and divide by 4
+                #     else:
+                #         data_dict[key] = (all_data_dict[f'{key}_sun'] + all_data_dict[f'{key}_asun'] + all_data_dict[f'{key}_north'] + all_data_dict[f'{key}_south'])/4
+
+
+
+
+
+
+
             else:
-                if old_ept_het_loading:
-                    df_epd_p, df_epd_e, energies_dict = \
-                        _read_epd_cdf_old(sensor=sensor, viewing=viewing, level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload)
-                elif not old_ept_het_loading:
-                    data_dict, energies_dict, metadata_dict = \
-                        _read_epd_cdf(sensor=sensor, viewing=viewing, level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload)
+                # if old_ept_het_loading:
+                #     df_epd_p, df_epd_e, energies_dict = \
+                #         _read_epd_cdf_old(sensor=sensor, viewing=viewing, level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload)
+                # elif not old_ept_het_loading:
+                data_dict, energies_dict, metadata_dict = \
+                    _read_epd_cdf(sensor=sensor, viewing=viewing, level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload)
             # adjusting the position of the timestamp manually. original SolO/EPD data hast timestamp at 'start' of interval
             if pos_timestamp == 'center' and level.lower() != 'll':  # TODO: run a for-loop over all dataframes?
                 if len(df_epd_p) > 0:
@@ -716,14 +750,14 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
                 if len(df_epd_e) > 0:
                     shift_index_start2center(df_epd_e)
 
-        return data_dict, energies_dict, metadata_dict
+    return data_dict, energies_dict, metadata_dict
 
 
 def _read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None, autodownload=False, multiindex=False):
     """
     INPUT:
         sensor: 'ept' or 'het' (string)
-        viewing: 'sun', 'asun', 'north', 'south', or 'omni' (string)
+        viewing: 'sun', 'asun', 'north', or 'south' (string)
         level: 'll' or 'l2' (string)
         startdate,
         enddate:    YYYYMMDD, e.g., 20210415 (integer)
@@ -2215,7 +2249,7 @@ def shift_index_start2center(df, delta_epoch_name=None):
         de = delta_epoch_name
     else:
         if df.columns.get_level_values(0).str.startswith('DELTA_EPOCH').sum() != 1:
-            print('DELTA_EPOCH name not available or not unique, aborting.')
+            custom_warning("DELTA_EPOCH column not available or not unique, aborting. Try using pos_timestamp='start' instead.")
             return
         else:
             # Obtain DELTA_EPOCH column name
@@ -2224,13 +2258,16 @@ def shift_index_start2center(df, delta_epoch_name=None):
     # Do index shifting for different cadences, two versions for normal DataFrame (STEP, EPT L3) or Multiindex (EPT, HET)
     if type(df[de]) is pd.core.series.Series:
         for cadence in df[de].unique():
-            # skip nan's. TODO: this means for NaN entries, the index stays at the start of the interval!
+            # skip nan's 
+            # (this means for NaN entries, the index stays at the start of the interval.)
+            # (apparently there are no NaN's in DELTA_EPOCH. at least for some test cases where data was NaN, DELTA_EPOCH was still defined.)
+            # (maybe this was a bug in older data versions.)
             if not np.isnan(cadence):
                 # Shift index by half the cadence
                 df.loc[df[de]==cadence, 'Time'] = df.loc[df[de]==cadence, 'Time'] + pd.Timedelta(f'{cadence/2}s')
     elif type(df[de]) is pd.core.frame.DataFrame:
         for cadence in df[de][de].unique():
-            # skip nan's. TODO: this means for NaN entries, the index stays at the start of the interval!
+            # skip nan's
             if not np.isnan(cadence):
                 # Shift index by half the cadence
                 df.loc[df[de][de]==cadence, 'Time'] = df.loc[df[de][de]==cadence, 'Time'] + pd.Timedelta(f'{cadence/2}s')
