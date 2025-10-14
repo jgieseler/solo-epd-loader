@@ -50,6 +50,29 @@ def custom_warning(message):
     return
 
 
+def custom_formatnotification(message, *args, **kwargs):
+    """
+    :meta private:
+    """
+    # ignore everything except the message
+    YELLOW = '\033[93m'
+    ENDC = '\033[0m'
+    BOLD = "\033[1m"
+    _yllw_str = '\x1b[38;5;226m'
+    return BOLD+YELLOW+'NOTE: '+ENDC+ str(message) + '\n'
+
+
+def custom_notification(message):
+    """
+    :meta private:
+    """
+    formatwarning_orig = warnings.formatwarning
+    warnings.formatwarning = custom_formatnotification
+    warnings.warn(message)
+    warnings.formatwarning = formatwarning_orig
+    return
+
+
 def _check_duplicates(filelist, verbose=True):
     """
     Checks for duplicate file entries in filelist (that are only different by
@@ -700,6 +723,7 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
                     for key in t_data_dict.keys():  # e.g. df_p, df_e, df_rtn, df_hci, ...
                         all_data_dict[f'{key}_{view}'] = t_data_dict[key]  # e.g. all_data_dict['df_p_sun']
                 # sum fluxes and uncertainties (TODO: make this bette for uncertainties!) from all four sectors and divide by 4
+                custom_warning('Note that for "omni" viewing the fluxes from the four viewing directions are summed up and divided by 4, and the uncertainties are treated the same way (which is not fully correct). Other parameters like DELTA_EPOCH or QUALITY_BITMASK are kept for all four viewings as separate columns.')
                 for key in t_data_dict.keys():  # e.g. df_p, df_e, df_rtn, df_hci, ...
                     data_dict[key] = pd.DataFrame()  # initialize empty dataframe for each key
                     if key in ['df_rtn']:
