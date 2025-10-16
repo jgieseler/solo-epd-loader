@@ -559,7 +559,10 @@ def _autodownload_cdf(startdate, enddate, sensor, level, path):
 
 
 # TODO: remove old_ept_het_loading
-def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=None, autodownload=False, only_averages=False, old_step_loading=False, pos_timestamp='center', old_ept_het_loading=True):
+def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None,
+             path=None, autodownload=False, only_averages=False,
+             old_step_loading=False, pos_timestamp='center',
+             old_ept_het_loading=True):
     """
     Load SolO/EPD data
 
@@ -683,16 +686,10 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
                                                                                 path=path,
                                                                                 autodownload=autodownload)
             # adjusting the position of the timestamp manually. original SolO/EPD data hast timestamp at 'start' of interval
-            if pos_timestamp == 'center':
-                # TODO: implement pos_timestamp for EPT L3 data also for df_rtn and df_hci?
-                custom_warning("Note that for the Dataframes containing the flow direction and SC coordinates timestamp position will not be adjusted by 'pos_timestamp'!")
-                if len(df) > 0:
-                    shift_index_start2center(df)
-                # if len(df_rtn) > 0:
-                #     shift_index_start2center(df_rtn)
-                # if len(df_hci) > 0:
-                #     shift_index_start2center(df_hci)
-            # return data_dict, energies_dict, metadata_dict
+            if pos_timestamp == 'center' and level.lower() != 'll' and len(data_dict[[*data_dict.keys()][0]]) > 0:
+                for key in data_dict.keys():  # e.g. df, df_rtn, df_hci, ...
+                    if key not in ['df_rtn', 'df_hci']:  # do not change timestamp for df_rtn and df_hci
+                        shift_index_start2center(data_dict[key])
         else:
             raise Exception("Level 3 data only available for EPT! No data read!")
     else:
@@ -701,15 +698,17 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
                 _read_step_cdf(level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload,
                                only_averages=only_averages, old_loading=old_step_loading)
             # adjusting the position of the timestamp manually. original SolO/EPD data hast timestamp at 'start' of interval
-            if pos_timestamp == 'center' and level.lower() != 'll' and old_step_loading is not True and len(datadf) > 0:
-                shift_index_start2center(datadf)  # TODO: implement pos_timestamp for STEP data
+            if pos_timestamp == 'center' and level.lower() != 'll' and old_step_loading is not True and len(data_dict[[*data_dict.keys()][0]]) > 0:
+                for key in data_dict.keys():  # e.g. df, df_rtn, df_hci, ...
+                    if key not in ['df_rtn', 'df_hci']:  # do not change timestamp for df_rtn and df_hci
+                        shift_index_start2center(data_dict[key])
             # return data_dict, energies_dict, metadata_dict
         if sensor.lower() == 'ept' or sensor.lower() == 'het':
             if viewing is None:
                 raise Exception("EPT and HET need a telescope 'viewing' direction! No data read!")
-                df_epd_p = []
-                df_epd_e = []
+                data_dict = []
                 energies_dict = []
+                metadata_dict = []
             elif viewing == 'omni':
                 data_dict = {}
                 all_data_dict = {}
@@ -720,6 +719,12 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
                     # elif not old_ept_het_loading:
                     t_data_dict, energies_dict, metadata_dict = \
                         _read_epd_cdf(sensor=sensor, viewing=view, level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload)
+                                    # adjusting the position of the timestamp manually. original SolO/EPD data hast timestamp at 'start' of interval    
+                    # adjusting the position of the timestamp manually. original SolO/EPD data hast timestamp at 'start' of interval
+                    if pos_timestamp == 'center' and level.lower() != 'll' and len(t_data_dict[[*t_data_dict.keys()][0]]) > 0:
+                        for key in t_data_dict.keys():  # e.g. df_p, df_e, df_rtn, df_hci, ...
+                            if key not in ['df_rtn', 'df_hci']:  # do not change timestamp for df_rtn and df_hci
+                                shift_index_start2center(t_data_dict[key])
                     for key in t_data_dict.keys():  # e.g. df_p, df_e, df_rtn, df_hci, ...
                         all_data_dict[f'{key}_{view}'] = t_data_dict[key]  # e.g. all_data_dict['df_p_sun']
                 # sum fluxes and uncertainties (TODO: make this bette for uncertainties!) from all four sectors and divide by 4
@@ -748,12 +753,14 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
                 # elif not old_ept_het_loading:
                 data_dict, energies_dict, metadata_dict = \
                     _read_epd_cdf(sensor=sensor, viewing=viewing, level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload)
-            # adjusting the position of the timestamp manually. original SolO/EPD data hast timestamp at 'start' of interval
-            if pos_timestamp == 'center' and level.lower() != 'll':  # TODO: run a for-loop over all dataframes?
-                if len(df_epd_p) > 0:
-                    shift_index_start2center(df_epd_p)
-                if len(df_epd_e) > 0:
-                    shift_index_start2center(df_epd_e)
+                # adjusting the position of the timestamp manually. original SolO/EPD data hast timestamp at 'start' of interval
+                if pos_timestamp == 'center' and level.lower() != 'll' and len(data_dict[[*data_dict.keys()][0]]) > 0:
+                    for key in data_dict.keys():  # e.g. df_p, df_e, df_rtn, df_hci, ...
+                        if key not in ['df_rtn', 'df_hci']:  # do not change timestamp for df_rtn and df_hci
+                            shift_index_start2center(data_dict[key])
+
+    if pos_timestamp == 'center' and level.lower() != 'll' and len(data_dict[[*data_dict.keys()][0]]) > 0:
+        custom_warning("Note that for the DataFrames containing the flow direction and SC coordinates (df_rtn & df_hci) the timestamp positions will not be adjusted by 'pos_timestamp'!")
 
     return data_dict, energies_dict, metadata_dict
 
@@ -1533,7 +1540,7 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
                             col_list.append(t_df)
                         except TypeError:
                             print(' ')
-                            print("WARNING: Gap in dataframe due to missing cdf file.")
+                            custom_warning("WARNING: Gap in dataframe due to missing cdf file.")
                             break
                     try:
                         temp_df = pd.concat(col_list, axis=1, keys=param_list)
@@ -1619,7 +1626,7 @@ def _read_new_step_cdf(files, only_averages=False):
     df_rtn = pd.DataFrame()
     df_hci = pd.DataFrame()
     for f in files:
-        print('Loading', f)
+        # print('Loading', f)
         # data = TimeSeries(f, concatenate=True)
         ignore_vars = []
         if not all_columns:
@@ -2247,16 +2254,16 @@ def shift_index_start2center(df, delta_epoch_name=None):
         Manual define name of the DELTA_EPOCH column, by default None
     """
 
-    # Make a copy of the index to work on
-    df['Time'] = df.index
-
     if delta_epoch_name:
         de = delta_epoch_name
     else:
         if df.columns.get_level_values(0).str.startswith('DELTA_EPOCH').sum() != 1:
-            custom_warning("DELTA_EPOCH column not available or not unique, aborting. Try using pos_timestamp='start' instead.")
+            custom_warning(f"DELTA_EPOCH column not available or not unique in DataFrame containing {df.columns[0]}, aborting. Try using pos_timestamp='start' instead.")
             return
         else:
+            # Make a copy of the index to work on
+            df['Time'] = df.index
+
             # Obtain DELTA_EPOCH column name
             de = df.columns.get_level_values(0)[df.columns.get_level_values(0).str.startswith('DELTA_EPOCH')][0]
 
