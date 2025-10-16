@@ -562,7 +562,7 @@ def _autodownload_cdf(startdate, enddate, sensor, level, path):
 def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None,
              path=None, autodownload=False, only_averages=False,
              old_step_loading=False, pos_timestamp='center',
-             old_ept_het_loading=True):
+             multiindex=False, old_ept_het_loading=True):
     """
     Load SolO/EPD data
 
@@ -601,6 +601,9 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None,
     autodownload : bool, optional
         If True, will try to download missing data files from SOAR, by default
         False.
+    multiindex : bool, optional
+        If True, will provide multi-index DataFrames as output as was the case
+        for older solo-epd-loader version. By default False.
     only_averages : bool, optional
         If True, will for STEP only return the averaged fluxes, and not the data
         of each of the 15 Pixels. This will reduce the memory consumption. By
@@ -718,7 +721,7 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None,
                     #         _read_epd_cdf_old(sensor=sensor, viewing=view, level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload)
                     # elif not old_ept_het_loading:
                     t_data_dict, energies_dict, metadata_dict = \
-                        _read_epd_cdf(sensor=sensor, viewing=view, level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload)
+                        _read_epd_cdf(sensor=sensor, viewing=view, level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload, multiindex=multiindex)
                                     # adjusting the position of the timestamp manually. original SolO/EPD data hast timestamp at 'start' of interval    
                     # adjusting the position of the timestamp manually. original SolO/EPD data hast timestamp at 'start' of interval
                     if pos_timestamp == 'center' and level.lower() != 'll' and len(t_data_dict[[*t_data_dict.keys()][0]]) > 0:
@@ -752,7 +755,7 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None,
                 #         _read_epd_cdf_old(sensor=sensor, viewing=viewing, level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload)
                 # elif not old_ept_het_loading:
                 data_dict, energies_dict, metadata_dict = \
-                    _read_epd_cdf(sensor=sensor, viewing=viewing, level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload)
+                    _read_epd_cdf(sensor=sensor, viewing=viewing, level=level, startdate=startdate, enddate=enddate, path=path, autodownload=autodownload, multiindex=multiindex)
                 # adjusting the position of the timestamp manually. original SolO/EPD data hast timestamp at 'start' of interval
                 if pos_timestamp == 'center' and level.lower() != 'll' and len(data_dict[[*data_dict.keys()][0]]) > 0:
                     for key in data_dict.keys():  # e.g. df_p, df_e, df_rtn, df_hci, ...
@@ -2064,6 +2067,7 @@ def create_multiindex(df):
     return df
 
 
+# TODO: adjust to new data structure without multiindex dataframe
 def combine_channels(df, energies, en_channel, sensor, viewing=None, species=None):
     """
     Average the fluxes of several adjacent energy channels of one sensor into
@@ -2278,11 +2282,17 @@ def shift_index_start2center(df, delta_epoch_name=None):
                 # Shift index by half the cadence
                 df.loc[df[de]==cadence, 'Time'] = df.loc[df[de]==cadence, 'Time'] + pd.Timedelta(f'{cadence/2}s')
     elif type(df[de]) is pd.core.frame.DataFrame:
-        for cadence in df[de][de].unique():
-            # skip nan's
-            if not np.isnan(cadence):
-                # Shift index by half the cadence
-                df.loc[df[de][de]==cadence, 'Time'] = df.loc[df[de][de]==cadence, 'Time'] + pd.Timedelta(f'{cadence/2}s')
+        if df[de].columns.get_level_values(0).str.startswith('DELTA_EPOCH').sum() != 1:
+            custom_warning(f"DELTA_EPOCH column not available or not unique in DataFrame containing {df.columns[0]}, aborting. Try using pos_timestamp='start' instead.")
+            return
+        else:
+            # Obtain second-level DELTA_EPOCH column name
+            de2 = df[de].columns.get_level_values(0)[df[de].columns.get_level_values(0).str.startswith('DELTA_EPOCH')][0]
+            for cadence in df[de][de2].unique():
+                # skip nan's
+                if not np.isnan(cadence):
+                    # Shift index by half the cadence
+                    df.loc[df[de][de2]==cadence, 'Time'] = df.loc[df[de][de2]==cadence, 'Time'] + pd.Timedelta(f'{cadence/2}s')
 
     # Overwrite index
     df.set_index('Time', drop=True, inplace=True)
