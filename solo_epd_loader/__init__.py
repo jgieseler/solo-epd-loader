@@ -559,6 +559,7 @@ def _autodownload_cdf(startdate, enddate, sensor, level, path):
 
 
 # TODO: remove old_ept_het_loading
+# TODO: give note/warning if multindex is set to True (as this is deprecated) and/or if it used for unsopported datasets
 def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None,
              path=None, autodownload=False, only_averages=False,
              old_step_loading=False, pos_timestamp='center',
@@ -1475,6 +1476,7 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
         custom_warning('During the selected time range the STEP data product changed (on Oct 22 2021)! Please adjust time range and run again.')
         datadf = []
         energies_dict = []
+        metadata_dict = []
     else:
 
         # if True, check online available files and download if not locally present
@@ -1491,10 +1493,12 @@ def _read_step_cdf(level, startdate, enddate=None, path=None, autodownload=False
             custom_warning('No corresponding data files found! Try different settings, path or autodownload.')
             datadf = []
             energies_dict = []
+            metadata_dict = []
         elif level == 'll':
             custom_warning('Low latency (ll) data not supported for STEP at the moment.')
             datadf = []
             energies_dict = []
+            metadata_dict = []
         elif product == 'rates':
             if old_loading:
                 custom_warning('old_step_loading option is only intended for testing purposes. Do not use!')
