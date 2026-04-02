@@ -625,7 +625,7 @@ def epd_load(sensor, startdate, enddate=None, level='l2', viewing=None, path=Non
     old_step_loading : bool, optional
         If True, will for old (i.e. before Oct 2021) STEP data loading use the
         legacy code that provides a multi-index DataFrame as output. Otherwise
-        new loading functionality by sunpy will be used. By default True.
+        new loading functionality by sunpy will be used. By default False.
     pos_timestamp : {str}, optional
         Change the position of the timestamp: 'center' or 'start' of the
         accumulation interval, or 'original' to do nothing, by default 'center'.
