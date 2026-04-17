@@ -57,11 +57,17 @@ repository = "https://github.com/jgieseler/solo-epd-loader"
 
 [tool.setuptools]
 zip-safe = false
-include-package-data = true
+include-package-data = false
+
+[tool.setuptools.package-data]
+# include solo_epd_loader/contamination_matrices/EPT_ion_contamination_matrix_sun.dat
+solo_epd_loader = [
+    "contamination_matrices/**/*",
+]
 
 [tool.setuptools.packages.find]
 include = ["solo_epd_loader*"]
-exclude = ["solo_epd_loader._dev*"]
+exclude = ["solo_epd_loader._dev*", "solo_epd_loader.tests*"]
 
 [tool.setuptools_scm]
 version_file = "solo_epd_loader/_version.py"
