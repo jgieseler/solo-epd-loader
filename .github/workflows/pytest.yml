@@ -68,5 +68,6 @@ jobs:
         pip install dist/solo_epd_loader-*.whl
     - name: Test with pytest
       run: |
-        cd /tmp
-        pytest --pyargs solo_epd_loader
+        # Rename source dir so Python can't import it, forcing use of installed wheel
+        mv solo_epd_loader solo_epd_loader_src
+        pytest solo_epd_loader_src/tests/
