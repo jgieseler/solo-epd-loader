@@ -64,8 +64,8 @@ jobs:
       run: python -m build
     - name: Install from wheel
       run: |
-        pip install pytest pytest-doctestplus
-        pip install --find-links=dist solo-epd-loader --no-index
+        pip install pytest pytest-doctestplus pytest-cov
+        pip install dist/solo_epd_loader-*.whl
     - name: Test with pytest
       run: |
         cd /tmp
