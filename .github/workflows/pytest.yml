@@ -43,3 +43,30 @@ jobs:
       uses: codecov/codecov-action@v6
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  test-wheel:
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+    - uses: actions/checkout@v6
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install build
+      run: python -m pip install build
+    - name: Build wheel
+      run: python -m build
+    - name: Install from wheel
+      run: |
+        pip install pytest pytest-doctestplus
+        pip install --find-links=dist solo-epd-loader --no-index
+    - name: Test with pytest
+      run: |
+        cd /tmp
+        pytest --pyargs solo_epd_loader
