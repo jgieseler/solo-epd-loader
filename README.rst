@@ -10,8 +10,8 @@ solo-epd-loader
 .. |license| image:: https://img.shields.io/conda/l/conda-forge/solo-epd-loader?style=flat
    :target: https://github.com/jgieseler/solo-epd-loader/blob/main/LICENSE.rst
 .. |python version| image:: https://img.shields.io/pypi/pyversions/solo-epd-loader?style=flat&logo=python
-.. |zenodo doi| image:: https://zenodo.org/badge/446889843.svg
-   :target: https://zenodo.org/badge/latestdoi/446889843
+.. |zenodo doi| image:: https://img.shields.io/badge/DOI-10.5281%2Fzenodo.7100450-blue
+   :target: https://doi.org/10.5281/zenodo.7100450
 .. |pytest| image:: https://github.com/jgieseler/solo-epd-loader/workflows/pytest/badge.svg
 .. |codecov| image:: https://codecov.io/gh/jgieseler/solo-epd-loader/branch/main/graph/badge.svg?token=Z8dueEWqKS
    :target: https://codecov.io/gh/jgieseler/solo-epd-loader
