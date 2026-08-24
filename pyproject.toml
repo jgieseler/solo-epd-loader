@@ -52,8 +52,11 @@ docs = [
     "sphinx",
     "sphinx-automodapi",
 ]
+
 [project.urls]
-repository = "https://github.com/jgieseler/solo-epd-loader"
+"Source Code" = "https://github.com/jgieseler/solo-epd-loader"
+Changelog = "https://github.com/jgieseler/solo-epd-loader/releases"
+"Issue Tracker" = "https://github.com/jgieseler/solo-epd-loader/issues"
 
 [tool.setuptools]
 zip-safe = false
